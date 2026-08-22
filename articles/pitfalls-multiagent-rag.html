@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>多源客服系统二开：从「静默失败」到「检索可靠」 | RAG · Agent 工程手记</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<div class="bg-grid"></div><div class="bg-grain"></div>
+<div class="progress" id="progress"></div>
+
+<nav class="nav"><div class="nav-in">
+  <a class="logo" href="../index.html"><span class="mark">
+    <svg viewBox="0 0 24 24" fill="none"><path d="M4 12h4l3 5 3-10 3 5h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    <span>RAG&thinsp;·&thinsp;Agent 工程手记</span></a>
+  <div class="nav-links"><a href="../index.html#articles">文章</a><a href="../index.html#projects">项目</a><a href="../index.html#about">关于</a></div>
+</div></nav>
+
+<article class="article">
+  <div class="art-crumb"><a href="../index.html">首页</a><span>/</span><span>踩坑实录 · 01</span></div>
+  <h1 class="art-title">多源客服系统二开：从「静默失败」到「检索可靠」</h1>
+  <div class="art-meta">
+    <span class="avatar">V</span>
+    <span>Vanity</span><span class="sep">·</span><span>2026-08</span><span class="sep">·</span><span>约 8 分钟</span><span class="sep">·</span><span>RAG · Agent · 本地大模型</span>
+  </div>
+
+  <nav class="toc">
+    <div class="t">目录</div>
+    <ul>
+      <li><a href="#s1"><span class="num">1</span>背景：二开要解决什么</a></li>
+      <li><a href="#s2"><span class="num">2</span>坑一：嵌入模型不一致 · 静默失败</a></li>
+      <li><a href="#s3"><span class="num">3</span>坑二：多源拼接 ≠ 融合</a></li>
+      <li><a href="#s4"><span class="num">4</span>坑三：chroma 0.5.x 落盘丢段</a></li>
+      <li><a href="#s5"><span class="num">5</span>坑四：Agent 框架 API 迁移</a></li>
+      <li><a href="#s6"><span class="num">6</span>总体复盘</a></li>
+    </ul>
+  </nav>
+
+  <div class="box info"><span class="bt">这篇讲什么</span>把一个能「跑通」的电商零售开源项目，打磨到「检索可靠、结果可解释、换环境也稳定」。全程踩了 5 类工程坑，重点是那些<strong>不报错、但结果不对</strong>的隐性故障。</div>
+
+  <h2 id="s1"><span class="n">1</span>背景：二开要解决什么</h2>
+  <p>很多电商客服项目的痛点很典型：客服回复依赖人工经验、知识分散在商品目录与政策文档里、退货这类高风险操作不能交给模型完全自主。我基于开源项目做二开，目标是把两件事做扎实：</p>
+  <ul>
+    <li><b>RAG 检索可靠</b> —— 用户问「有机牛油果」，稳定召回正确商品，并且能讲清出处。</li>
+    <li><b>多 Agent 编排可用</b> —— 销售 / 客服分流 + <b>Human-in-the-loop</b> 退货审批，且全程本地可跑。</li>
+  </ul>
+  <div class="kpis">
+    <div class="kpi"><div class="v"><span data-count="9288">0</span></div><div class="l">真实商品入库</div></div>
+    <div class="kpi"><div class="v"><span data-count="100">0</span>%</div><div class="l">Top-3 检索命中率</div></div>
+    <div class="kpi"><div class="v">~<span data-count="0.3" data-dec="1">0</span>s</div><div class="l">单次检索延迟</div></div>
+    <div class="kpi"><div class="v"><span data-count="30">0</span></div><div class="l">测试用例全过</div></div>
+  </div>
+
+  <h2 id="s2"><span class="n">2</span>坑一：建库与查询的嵌入模型不一致</h2>
+  <p class="faint">静默故障 · 最难定位的一类：「跑得通，但结果空白」</p>
+  <p><b>现象</b>：库建好了、数据也在，但无论问什么，相似度检索都返回空或无关结果，而且<strong>不报任何错误</strong>。</p>
+  <p><b>排查</b>：分别打点建库与查询时实际使用的嵌入模型，发现维数对不上：</p>
+  <pre><span class="lbl">build_vector_db.py / tools.py</span><code># 建库脚本                    # 查询端
+model = "mxbai-embed-large-v1"   model = "all-MiniLM-L6-v2"
+# 1024 维                       # 384 维</code></pre>
+  <div class="box err"><span class="bt">根因</span>Chroma 在 upsert 时用建库模型的向量维数定下集合维度，查询向量维度对不上时，轻则空结果、重则抛 <code>InvalidDimensionException</code>。维度不一致意味着存进去与查询的向量<strong>不在同一空间</strong>，相似度比较全部失效——而这属于「可运行但结果空白」的静默故障。</div>
+  <p><b>解决</b>：把嵌入模型收敛为单一配置源，并加<strong>回归测试守卫</strong>防止再次漂移：</p>
+  <pre><span class="lbl">config.py</span><code>EMBEDDING_MODEL = "nomic-embed-text"   # Ollama 本地 · 768 维 · CPU 友好
+CHROMA_DIR = "vector_db"</code></pre>
+  <pre><span class="lbl">tests/test_embedding_consistency.py</span><code>def test_single_embedding_source():
+    # 断言建库脚本与查询端都引用 config.EMBEDDING_MODEL，
+    # 不允许任何一处硬编码其他模型名。</code></pre>
+  <div class="box ok"><span class="bt">效果</span>修复后用 10 组典型电商查询（牛油果、酸奶、冷冻披萨……）验证，<b>Top-3 命中率 100%</b>，且换环境不复发。</div>
+  <blockquote>结论：RAG 的「嵌入一致性」是第一顺位检查项，最好用<strong>单一常量 + 测试锁死</strong>，而不是靠人工记得。</blockquote>
+
+  <h2 id="s3"><span class="n">3</span>坑二：多知识源的「拼接不等于融合」</h2>
+  <p>项目有<strong>商品目录</strong>（catalog_chunks，9288 条）与<strong>政策文档</strong>（policies，8 条）两个向量集合。早期实现是「每个源各取 top-k，然后按源顺序拼接」。</p>
+  <div class="box warn"><span class="bt">问题</span>商品 9288 条、政策 8 条，拼接后商品永远排前面，弱源（政策）的高相关召回被淹没；同一条内容跨源重复召回，上下文噪音多、排序不稳定。完整量化见《<a href="rrf-vs-plain-experiment.html" style="color:var(--cy-soft)">RRF 融合对比实验</a>》。</div>
+  <p><b>解决</b>：实现 <b>RRF（Reciprocal Rank Fusion）倒数排名融合</b>，聚合多个源的排序信号并天然去重：</p>
+  <pre><span class="lbl">agents/tools/rrf_fusion.py</span><code># RRF 核心：按「倒数排名」聚合各源排序
+# score(doc) = Σ_sources  1 / (rank_in_source + K)   # K=60
+def fuse(groups):
+    scores = {}; docs = {}
+    for group in groups:               # 每个源自己的 top-k
+        for rank, doc in enumerate(group):
+            key = doc["text"].lower()
+            scores[key] = scores.get(key, 0) + 1.0 / (60 + rank + 1)
+            docs.setdefault(key, doc)
+    return [docs[k] for k, _ in sorted(scores.items(),
+                                       key=lambda kv: kv[1], reverse=True)]</code></pre>
+  <div class="box ok"><span class="bt">效果</span>对比同一批查询：<b>RRF 返回更少的重复噪音、跨源高相关文档排得更前</b>。融合算法抽成独立函数，可脱离服务单独跑单测。</div>
+
+  <h2 id="s4"><span class="n">4</span>坑三：chroma 0.5.x 的落盘丢段</h2>
+  <p>检索可靠之后，又遇到存储层的隐性坑：<b>多线程并发 upsert 会让 chroma 0.5.x 丢失 HNSW 向量段</b>——sqlite / pickle 都在，但查询时报 <code>Cannot open header file</code>。</p>
+  <p>规避方式很直接：把「网络 IO 密集」的嵌入层并发、把「写入层」串行批量：</p>
+  <pre><span class="lbl">线程嵌入 + 顺序批量写入</span><code>with ThreadPoolExecutor(8) as ex:
+    vecs = list(ex.map(embed_text, chunk_docs))   # 并发取 embedding
+col.add(ids=ids, embeddings=vecs, documents=chunk_docs)  # 顺序 add</code></pre>
+  <p class="dim">这也是最终让我改用<strong>预计算嵌入缓存 + 内存余弦检索</strong>的原因之一——避免单机持久化不可控，让检索在任何环境都稳定可复现。</p>
+
+  <h2 id="s5"><span class="n">5</span>坑四：Agent 编排框架的 API 迁移</h2>
+  <p>项目里旧示例基于已停产的 <code>adk</code> 包，官方新版本是 <code>google-adk</code>，API 变了：</p>
+  <pre><code># 旧（已停产）                    # 新（官方）
+from adk.tools import Tool         from google.adk.agents import Agent, SequentialAgent
+                                   from google.adk.tools import FunctionTool</code></pre>
+  <p>迁移时踩到细节：<code>SequentialAgent</code> 只接受 <code>sub_agents</code>，<code>tools</code> 参数属于 <code>Agent</code> / <code>LlmAgent</code>——照文档写会直接报参数不支持。</p>
+  <div class="box warn"><span class="bt">教训</span>升级第三方大版本时先查官方迁移文档，别照搬旧写法；用<strong>最小用例验证 API 签名</strong>，不要一次性全量改。</div>
+
+  <h2 id="s6"><span class="n">6</span>总体复盘</h2>
+  <div class="tbl"><table>
+    <tr><th>类别</th><th>踩的坑</th><th>解法</th></tr>
+    <tr><td>RAG</td><td>嵌入模型不一致 → 静默失败</td><td>单一配置源 + 一致性测试</td></tr>
+    <tr><td>RAG</td><td>多源拼接排序不稳、重复</td><td>RRF 融合重排 + 去重</td></tr>
+    <tr><td>存储</td><td>chroma 0.5.x 并发写丢段</td><td>线程嵌入 + 顺序批量 add</td></tr>
+    <tr><td>编排</td><td>adk 旧 API 停产</td><td>迁移 google-adk 新 API</td></tr>
+    <tr><td>部署</td><td>远程模型依赖外网</td><td>Ollama 本地嵌入 / 生成</td></tr>
+  </table></div>
+  <p>这些坑的共同点：都是<strong>「能跑但结果不对 / 换环境就挂」</strong>的隐性工程问题，单靠功能测试覆盖不到，需要专门的检索评估与回归测试来兜底。这也是二开这类项目最有价值的部分——不只是把功能做出来，而是把<strong>可靠性</strong>夯实。</p>
+  <blockquote>下一篇实验看具体数据：同样是这些查询，RRF 融合如何把政策相关文档从「完全被淹没」提升到第 2 位？<a href="rrf-vs-plain-experiment.html" style="color:var(--cy-soft)">阅读对比实验 →</a></blockquote>
+
+  <div class="artnav">
+    <a href="../index.html#articles"><div class="dir">返回</div><div class="nm">← 回到文章列表</div></a>
+    <a href="rrf-vs-plain-experiment.html"><div class="dir">下一篇</div><div class="nm">RRF 融合 vs 直接拼接：命中率对比实验 →</div></a>
+  </div>
+</article>
+
+<footer>本站点托管于 GitHub Pages · RAG · Agent 工程手记</footer>
+<button id="topBtn" aria-label="回到顶部"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg></button>
+<script src="../assets/main.js"></script>
+</body>
+</html>
