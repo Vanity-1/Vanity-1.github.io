@@ -1,5 +1,4 @@
 # GitHub Pages 站点配置
-title: RAG · Agent 工程手记
-description: 检索增强与 AI Agent 方向的二次开发实战笔记 —— RAG 检索、多 Agent 编排、MCP 工具、RRF 融合与量化实验
-# 纯静态 HTML/CSS/JS 构建，无需 Jekyll 主题渲染
+title: 二进制花园
+description: 个人技术博客 —— 记录软件工程与 AI 应用方向的实践、踩坑与思考
 theme: null
