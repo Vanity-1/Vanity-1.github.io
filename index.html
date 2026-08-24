@@ -36,16 +36,21 @@
 <header class="hero">
   <span class="eyebrow"><span class="dot"></span> 个人技术博客 · 持续更新</span>
   <h1>在代码与工程之间<br><span class="grad-text">种一座自己的花园</span></h1>
-  <p class="lead">记录软件工程与 AI 应用方向的<b>实践、踩坑与思考</b>——从检索增强、Agent 编排到工程化落地，每一篇都尽量给出可复现的结论与数据。</p>
+  <p class="lead">记录软件工程与 AI 应用方向的<b>实践、踩坑与思考</b>——从检索增强、Agent 编排、视频知识库到工程化落地，每一篇都尽量给出可复现的结论与数据。</p>
   <div class="cta-row">
     <a class="btn btn-primary" href="#articles">读技术文章</a>
     <a class="btn btn-ghost" href="#projects">看落地项目</a>
   </div>
   <div class="stats reveal">
-    <div class="chip"><div class="v grad-text"><span data-count="9288">0</span></div><div class="l">真实商品入库（RAG 目录）</div></div>
-    <div class="chip"><div class="v grad-text"><span data-count="100" data-dec="0">0</span>%</div><div class="l">Top-3 检索命中率</div></div>
-    <div class="chip"><div class="v grad-text"><span data-count="5">0</span></div><div class="l">高价值踩坑记录</div></div>
-    <div class="chip"><div class="v grad-text"><span data-count="2">0</span></div><div class="l">落地二次开发项目</div></div>
+    <div class="chip"><div class="v grad-text"><span data-count="4">0</span></div><div class="l">技术文章</div></div>
+    <div class="chip"><div class="v grad-text"><span data-count="4">0</span></div><div class="l">落地项目</div></div>
+    <div class="chip"><div class="v grad-text"><span data-count="700">0</span>*</div><div class="l">手写 Agent 核心行数</div></div>
+    <div class="chip"><div class="v grad-text"><span data-count="2">0</span></div><div class="l">平台接入（视频知识库）</div></div>
+  </div>
+  <div class="vbar">
+    <span class="avatar">V</span>
+    <span class="t">你好，我是 <b>Vanity</b>——软件工程方向，专注 <b>RAG</b> 与 <b>Agent</b> 的工程落地。</span>
+    <a href="https://github.com/Vanity-1" target="_blank" rel="noopener">GitHub →</a>
   </div>
 </header>
 
@@ -92,6 +97,40 @@
       <p class="desc">商品目录(9288) 淹没政策(8) 时怎么办？用倒数排名融合把弱源高相关文档稳定提升到第 2 位。</p>
       <div class="foot"><span>约 6 分钟</span><span class="ctl">阅读 <span>→</span></span></div>
     </a>
+    <a class="card reveal" href="articles/700-lines-agent-nanoagent.html">
+      <div class="art art-na">
+        <svg viewBox="0 0 400 120" preserveAspectRatio="xMidYMid slice">
+          <g font-size="15" font-family="monospace" text-anchor="middle">
+            <text x="400" y="46" fill="#38e0e0">while</text>
+            <text x="400" y="66" fill="#ff8fb8">loop:</text>
+            <text x="400" y="88" fill="#7ff2ef">think → tool → ctx</text>
+          </g>
+          <g fill="#38e0e0"><circle cx="60" cy="95" r="4"/><circle cx="140" cy="25" r="3"/><circle cx="230" cy="60" r="5"/><circle cx="320" cy="30" r="3"/></g>
+          <path d="M60 95 C120 30,170 90,230 60 S300 20,340 40" stroke="rgba(56,224,224,.5)" stroke-width="1.5" fill="none"/>
+        </svg>
+      </div>
+      <div class="tag-row"><span class="badge">框架解析</span><span class="badge">Agent</span><span class="badge">源码</span></div>
+      <h3>700 行手写一个 Agent 框架：NanoAgent 的原理</h3>
+      <p class="desc">一个成熟 Agent 的核心只有三件事：把函数变工具、reAct 主循环、可靠记进上下文。700 行如何自洽实现？</p>
+      <div class="foot"><span>约 10 分钟</span><span class="ctl">阅读 <span>→</span></span></div>
+    </a>
+    <a class="card reveal" href="articles/clipmind-video-knowledge-base.html">
+      <div class="art art-cm">
+        <svg viewBox="0 0 400 120" preserveAspectRatio="xMidYMid slice">
+          <g stroke-linecap="round" fill="none">
+            <path d="M60 80 L95 80 L95 45 L120 45 L120 35 L165 35 L165 45 L210 45 L210 80 L245 80 Z" stroke="rgba(255,143,184,.6)" stroke-width="1.5"/>
+            <path d="M95 45 L120 45 M120 45 L120 60 M95 80 L79 92 M245 80 L261 92" stroke="rgba(155,140,255,.5)" stroke-width="1.5"/>
+            <path d="M285 40 C305 30,315 60,335 55 S365 80,375 70" stroke="rgba(56,224,224,.55)" stroke-width="1.5"/>
+          </g>
+          <g fill="#ff8fb8"><circle cx="95" cy="45" r="3.5"/><circle cx="120" cy="45" r="3.5"/><circle cx="165" cy="40" r="3.5"/><circle cx="210" cy="45" r="3.5"/></g>
+          <g fill="#38e0e0"><circle cx="285" cy="40" r="3.5"/><circle cx="335" cy="55" r="3.5"/><circle cx="420" cy="65" r="3.5"/></g>
+        </svg>
+      </div>
+      <div class="tag-row"><span class="badge b">工程实战</span><span class="badge">ASR</span><span class="badge">RAG</span></div>
+      <h3>把收藏视频变成可对话知识库：ClipMind 拆解</h3>
+      <p class="desc">B站/抖音收藏夹同步、ASR 转写、向量入库、RAG 问答追溯来源——一个本地优先视频知识库的工程取舍。</p>
+      <div class="foot"><span>约 9 分钟</span><span class="ctl">阅读 <span>→</span></span></div>
+    </a>
   </div>
 </section>
 
@@ -113,6 +152,18 @@
       <p class="desc">LangGraph StateGraph 实现销售/客服路由与 Human-in-the-loop 退货审批；嵌入层本地化 + 测试守卫加固。</p>
       <div class="foot"><span>28 文件 · 含完整测试</span><span class="ctl">GitHub <span>→</span></span></div>
     </a>
+    <a class="card reveal" href="articles/700-lines-agent-nanoagent.html">
+      <div class="tag-row"><span class="badge">框架</span><span class="badge">Agent</span><span class="badge">MCP</span></div>
+      <h3>NanoAgent：700 行手写 Agent 框架</h3>
+      <p class="desc">极简 Python Agent 框架：@function_tool 装饰器、reAct 主循环、流式输出，并原生集成 MCP 工具生态。</p>
+      <div class="foot"><span>核心约 700 行 · 含测试</span><span class="ctl">GitHub <span>→</span></span></div>
+    </a>
+    <a class="card reveal" href="articles/clipmind-video-knowledge-base.html">
+      <div class="tag-row"><span class="badge">视频知识库</span><span class="badge">ASR</span><span class="badge">RAG</span></div>
+      <h3>ClipMind：本地优先视频知识库</h3>
+      <p class="desc">B站/抖音收藏自动同步、ASR 转写、ChromaDB 向量入库、RAG 对话追溯来源；云端/本地双模式，数据不出机。</p>
+      <div class="foot"><span>FastAPI + Next.js + Tauri</span><span class="ctl">GitHub <span>→</span></span></div>
+    </a>
   </div>
 </section>
 
@@ -130,6 +181,8 @@
     <span class="skill"><span class="ic" style="background:#9b8cff"></span>Google ADK</span>
     <span class="skill"><span class="ic" style="background:#ff8fb8"></span>Ollama 本地大模型</span>
     <span class="skill"><span class="ic" style="background:#5bf0b0"></span>Python / FastAPI</span>
+    <span class="skill"><span class="ic" style="background:#ff8fb8"></span>ASR 语音转写</span>
+    <span class="skill"><span class="ic" style="background:#9b8cff"></span>Next.js / Tauri</span>
   </div>
 </section>
 
@@ -165,6 +218,8 @@
   <div class="flinks">
     <a href="https://github.com/Vanity-1/ecommerce-retail-rag-mcp" target="_blank" rel="noopener">RAG+MCP 项目</a>
     <a href="https://github.com/Vanity-1/langgraph-retail-assistant" target="_blank" rel="noopener">LangGraph 项目</a>
+    <a href="https://github.com/Vanity-1/NanoAgent" target="_blank" rel="noopener">NanoAgent 框架</a>
+    <a href="https://github.com/Vanity-1/ClipMind" target="_blank" rel="noopener">ClipMind</a>
     <a href="https://github.com/Vanity-1" target="_blank" rel="noopener">GitHub 主页</a>
   </div>
 </footer>

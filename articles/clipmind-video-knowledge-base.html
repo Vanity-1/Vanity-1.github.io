@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>把收藏视频变成可对话知识库：ClipMind 架构拆解 | 二进制花园</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<div class="bg-grid"></div><div class="bg-grain"></div>
+<div class="progress" id="progress"></div>
+
+<nav class="nav"><div class="nav-in">
+  <a class="logo" href="../index.html"><span class="mark">
+    <svg viewBox="0 0 24 24" fill="none"><path d="M4 12h4l3 5 3-10 3 5h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    <span>二进制花园</span></a>
+  <div class="nav-links"><a href="../index.html#articles">文章</a><a href="../index.html#projects">项目</a><a href="../index.html#about">关于</a></div>
+</div></nav>
+
+<div class="gutter">
+<article class="article">
+  <div class="art-crumb"><a href="../index.html">首页</a><span>/</span><span>工程实战 · 04</span></div>
+  <h1 class="art-title">把收藏视频变成可对话知识库：<br>ClipMind 的架构与工程取舍</h1>
+  <div class="art-meta">
+    <span class="avatar">V</span>
+    <span>Vanity</span><span class="sep">·</span><span>2026-08</span><span class="sep">·</span><span>约 9 分钟</span><span class="sep">·</span><span>视频知识库 · ASR · RAG · FastAPI</span>
+  </div>
+
+  <nav class="toc">
+    <div class="t">目录</div>
+    <ul>
+      <li><a href="#s1"><span class="num">1</span>背景：收藏夹为什么总是「吃灰」</a></li>
+      <li><a href="#s2"><span class="num">2</span>整体数据流与边界</a></li>
+      <li><a href="#s3"><span class="num">3</span>平台同步：B 站/抖音的增量拉取</a></li>
+      <li><a href="#s4"><span class="num">4</span>ASR：从视频到可检索文字</a></li>
+      <li><a href="#s5"><span class="num">5</span>向量化：多提供方 Embedding 与本地优先</a></li>
+      <li><a href="#s6"><span class="num">6</span>问答链路：混合检索 + RRF + 来源追溯</a></li>
+      <li><a href="#s7"><span class="num">7</span>工程取舍：本地优先、任务幂等、双模式模型</a></li>
+    </ul>
+  </nav>
+
+  <div class="box info"><span class="bt">一句话结论</span>ClipMind 把「我收藏过的视频」变成<strong>可语义检索、可对话追问的个人知识库</strong>：同步收藏夹 → ASR 语音转写 → 向量入库 → RAG 问答并追溯来源。全程<strong>本地优先</strong>，第三方 Key 与模型均可替换为本地方案，数据不出本机。</div>
+
+  <h2 id="s1"><span class="n">1</span>背景：收藏夹为什么总是「吃灰」</h2>
+  <p>大多数人都有这样的收藏夹：几百条 B 站视频、抖音喜欢列表，收藏时觉得「以后要看」，但<strong>几乎不会再看第二遍</strong>。它们散落在两个平台、以音视频形态存在，既无法全文搜索，也无法归纳回顾。</p>
+  <p>ClipMind 的核心洞察：这些视频里其实是<strong>半结构化的高价值内容</strong>——只要把它们转写成文字、向量化入库，就能像查资料一样「搜」和「问」。于是定了四个核心能力：</p>
+  <ul>
+    <li><b>自动同步</b>：扫码登录后拉取 B 站收藏夹、抖音喜欢列表。</li>
+    <li><b>ASR 转写</b>：把视频语音转成文字，形成可检索的文本切片。</li>
+    <li><b>向量知识库</b>：文本分块 → 向量化 → 存入 ChromaDB。</li>
+    <li><b>RAG 对话</b>：对知识库提问，回答带视频来源引用。</li>
+  </ul>
+
+  <div class="kpis">
+    <div class="kpi"><div class="v"><span>2</span></div><div class="l">平台接入（B站/抖音）</div></div>
+    <div class="kpi"><div class="v"><span>5</span></div><div class="l">Embedding 提供方</div></div>
+    <div class="kpi"><div class="v"><span>2</span></div><div class="l">ASR 云端/本地模式</div></div>
+    <div class="kpi"><div class="v"><span>3</span></div><div class="l">部署形态</div></div>
+  </div>
+
+  <h2 id="s2"><span class="n">2</span>整体数据流与边界</h2>
+  <p>整个系统的数据流可以画成一条<strong>「入库链路」+ 一条「问答链路」</strong>，两条链只在「向量库」处交汇，职责非常清晰：</p>
+  <div class="viz reveal">
+    <h4>ClipMind 两条主链路</h4>
+    <div class="dline"><span class="lab">入库链路</span><span class="seq"><i class="c">平台API</i><span class="ar">→</span><i class="c">抓取</i><span class="ar">→</span><i class="c">ASR</i><span class="ar">→</span><i class="c">分块</i><span class="ar">→</span><i class="c">嵌入</i><span class="ar">→</span><i class="c">ChromaDB</i></span></div>
+    <div class="dline"><span class="lab">问答链路</span><span class="seq"><i class="c">提问</i><span class="ar">→</span><i class="c">混合检索</i><span class="ar">→</span><i class="c">RRF</i><span class="ar">→</span><i class="c">LLM</i><span class="ar">→</span><i class="c">回答+来源</i></span></div>
+  </div>
+  <p>从目录结构能看出后端的模块化程度很高：<code>app/services/</code> 下按职责拆分出 <code>asr.py</code>（转写）、<code>bilibili.py</code>（B 站拉取）、<code>hybrid_retriever.py</code>（混合检索）、<code>rag.py</code>（问答）、<code>ingest_pipeline.py</code>（入库调度）等十几个服务；<code>routers/</code> 暴露 FastAPI 路由；前端是 Next.js + Tailwind，后端 FastAPI + ChromaDB。</p>
+
+  <h2 id="s3"><span class="n">3</span>平台同步：B 站/抖音的增量拉取</h2>
+  <p>对接平台 API 的核心难点是<strong>登录态与增量同步</strong>。B 站侧用扫码登录（优先 API 方式生成二维码，失败回退浏览器池），拿到会话 Cookie（如 <code>SESSDATA</code>）后再请求收藏夹。</p>
+  <p>增量同步的实现值得单独说——它用「按收藏时间倒序 + 命中边界即停止」来避免重复拉取：</p>
+  <pre><span class="lbl">bilibili.py · get_all_favorite_videos</span><code><span class="k">async def</span> <span class="f">get_all_favorite_videos</span>(self, media_id, last_sync_at=None):
+    incremental = last_sync_at <span class="k">is not</span> None
+    <span class="k">for</span> pn <span class="k">in</span> count(1):
+        result = <span class="k">await</span> self.get_favorite_content(media_id, pn=pn, ps=<span class="n">20</span>, order=<span class="s">"mtime"</span>)
+        medias = result[<span class="s">"medias"</span>]
+        <span class="k">if</span> incremental:
+            <span class="k">for</span> m <span class="k">in</span> medias:
+                <span class="k">if</span> m.get(<span class="s">"fav_time"</span>, inf) <= last_sync_at:
+                    <span class="k">return</span>   <span class="c"># 命中已同步边界，后续更老，提前停止</span>
+                <span class="k">yield</span> m
+        <span class="k">else</span>:
+            <span class="k">yield from</span> medias
+        <span class="k">if not</span> result[<span class="s">"has_more"</span>]: <span class="k">break</span>
+        <span class="k">await</span> asyncio.sleep(<span class="n">0.3</span>)      <span class="c"># 控制请求频率，避免风控</span></code></pre>
+  <ul>
+    <li><b>增量非全量</b>：只同步<code>fav_time &gt; last_sync_at</code> 的新增视频，大幅节省请求与入库成本。</li>
+    <li><b>边界兜底</b>：遇到缺失 <code>fav_time</code> 字段的视频，保守纳入而不是跳过，避免漏同步。</li>
+    <li><b>限速</b>：每页间 <code>sleep(0.3)</code>，属于对接第三方 API 的基础卫生。</li>
+  </ul>
+
+  <h2 id="s4"><span class="n">4</span>ASR：从视频到可检索文字</h2>
+  <p>视频内容无法直接向量化，必须先经 ASR 转成文字。ClipMind 对 ASR 做了<strong>云端 / 本地双模式</strong>：</p>
+  <ul>
+    <li><b>云端（DashScope Recognition）</b>：本地文件直传，返回带时间轴的句子列表，转写质量高。</li>
+    <li><b>本地（faster-whisper）</b>：无需网络、数据不出机，适合离线与隐私场景。</li>
+  </ul>
+  <pre><span class="lbl">asr.py（节选）</span><code><span class="k">class</span> <span class="f">ASRService</span>:
+    <span class="k">def</span> <span class="f">_configure</span>(self):
+        <span class="k">if not</span> self.api_key: <span class="k">raise</span> ValueError(<span class="s">"未配置 DASHSCOPE API Key"</span>)
+        dashscope.api_key = self.api_key   <span class="c"># asr_api_key 独立，不复用 LLM key</span>
+
+    <span class="k">def</span> <span class="f">_transcode_audio_to_pcm</span>(self, file_path):
+        <span class="c"># ffmpeg 转成 16k/s16le/单声道 PCM，适配 Recognition</span>
+        <span class="k">cmd</span> = [ffmpeg, <span class="s">"-i"</span>, file_path, <span class="s">"-f"</span>, <span class="s">"s16le"</span>,
+                <span class="s">"-acodec"</span>, <span class="s">"pcm_s16le"</span>, <span class="s">"-ac"</span>, <span class="s">"1"</span>, <span class="s">"-ar"</span>, <span class="s">"16000"</span>, pcm_path]
+        <span class="f">result</span> = subprocess.run(cmd, timeout=<span class="n">120</span>)
+        <span class="k">return</span> pcm_path if result.returncode == <span class="n">0</span> else <span class="n">None</span></code></pre>
+  <p>一个容易踩的工程细节：<strong>ASR 的 Key 与 LLM 的 Key 必须分离</strong>。代码里明确注释「ASR 使用独立的 asr_api_key，不复用 openai_api_key」，否则在只配了本地 LLM 时会被误调 DashScope 发起无效 401 请求、白耗等待。这种「配置源解耦」是双模式系统里很容易被忽略的坑。</p>
+
+  <h2 id="s5"><span class="n">5</span>向量化：多提供方 Embedding 与本地优先</h2>
+  <p>Embedding 与 LLM 一样做了<strong>多提供方抽象</strong>，通过 <code>RAGService._VALID_PROVIDERS</code> 约束合法集合：</p>
+  <pre><span class="lbl">rag.py · Embedding 提供方</span><code><span class="f">_VALID_PROVIDERS</span> = {<span class="s">"openai"</span>, <span class="s">"dashscope"</span>, <span class="s">"ollama"</span>, <span class="s">"nvidia"</span>, <span class="s">"local"</span>}
+<span class="c"># 支持云端 API 与本地模型（bge/m3e、ONNX 运行时离线推理）</span></code></pre>
+  <p>亮点是 <b><code>local</code> 这个「本地 Embedding」提供方</b>：用 <code>sentence-transformers</code> 加载 bge/m3e 一类模型，并通过 <code>onnxruntime</code> 离线推理（不依赖 torch，体积小、发布版能跑）。这样在没有网络、没有第三方 Key 的环境下，整个入库链路也能本地跑通——与项目「本地优先」的定位一致。</p>
+  <pre><span class="lbl">rag.py · LLM 双模式</span><code><span class="k">if</span> llm_provider == <span class="s">"ollama"</span>:
+    self.llm = <span class="f">ChatOllama</span>(base_url=cfg.ollama_base_url, model=cfg.ollama_model)
+<span class="k">else</span>:
+    self.llm = <span class="f">ChatOpenAI</span>(api_key=cfg.openai_api_key, base_url=cfg.openai_base_url)</code></pre>
+
+  <h2 id="s6"><span class="n">6</span>问答链路：混合检索 + RRF + 来源追溯</h2>
+  <p>回答质量的上限取决于检索质量。ClipMind 在 RAG 问答处用了 <strong>混合检索 + RRF 融合</strong>：</p>
+  <ul>
+    <li><b>向量检索</b>：语义召回（<code>hybrid_retriever.py</code>）。</li>
+    <li><b>关键词检索（BM25 类）</b>：精确匹配，对专有名词、代码片段更可靠。</li>
+    <li><b>RRF 融合</b>：用倒数排名融合两条结果，抑制单一来源的偏科。</li>
+  </ul>
+  <div class="box ok"><span class="bt">为什么混合不止向量</span>纯向量可能对「产品型号、术语、人名」这类<strong>精确 key</strong> 召回不稳定；加一路关键词检索并用 RRF 融合，能同时保住语义相关与精确命中，这也是我上一篇里验证过的方向（命中率 9/12 → 12/12）。ClipMind 把它落到了视频知识库这种长文本切片场景。</div>
+  <p>最后是<strong>来源追溯</strong>：每个回答都尽量带上命中的视频片段来源，让用户可以一键跳回原视频。这一层对「知识库工具」至关重要——没有出处的回答，可信度会大打折扣。</p>
+
+  <div class="box warn"><span class="bt">隐私说明</span>项目是<strong>本地优先</strong>架构：ChromaDB 落库在本机、数据库用 SQLite、Cookie 与敏感配置字段服务端加密存储；可选本地 ASR 与本地 Embedding 后，<b>可以在完全不联网、不上传第三方的情况下完成入库与问答</b>。第三方对接仅在你主动配置 Key 时启用。</div>
+
+  <h2 id="s7"><span class="n">7</span>工程取舍：本地优先、任务幂等、双模式模型</h2>
+  <p>如果把 ClipMind 当作一个「工程范本」来看，值得吸收的是几个<strong>系统级取舍</strong>：</p>
+  <ul>
+    <li><b>变与不变分离</b>：Embedding / LLM / ASR 各走独立提供方抽象，新增一个提供方只加一个分支，不动核心链路。</li>
+    <li><b>配置按需解耦</b>：ASR key、LLM key、Embedding key 各自独立，避免「配了一个就强制依赖另一个」。</li>
+    <li><b>入库任务可追踪</b>：<code>ingest_pipeline</code> / <code>task_tracker</code> 把每次入库做成可幂等、可恢复的任务，而不是一次性脚本。</li>
+    <li><b>失效隔离</b>：ASR 云服务挂掉时能回退本地 Whisper——用「降级路径」保住了整条链路的可用性。</li>
+  </ul>
+  <blockquote>ClipMind 真正的价值不只是「把视频转文字」，而是示范了<strong>一个面向个人的 AI 工具，如何把「必须联网调三方」的产品做成「默认本地、可选云端」</strong>。对想用 RAG 落地私有数据的项目，这套提供方抽象与双路径设计很值得参考。</blockquote>
+
+  <div class="artnav">
+    <a href="700-lines-agent-nanoagent.html"><div class="dir">上一篇</div><div class="nm">← 700 行手写一个 Agent 框架：NanoAgent</div></a>
+    <a href="../index.html"><div class="dir">返回</div><div class="nm">回到文章列表 →</div></a>
+  </div>
+</article>
+
+<aside class="pkcard">
+  <div class="top">
+    <span class="avatar">V</span>
+    <div>
+      <div class="nm">Vanity</div>
+      <div class="rol">RAG · Agent 工程实践者</div>
+    </div>
+  </div>
+  <p class="bio">软件工程方向，专注检索增强与大模型 Agent 的工程落地。比起"功能能跑"，更在意可靠、可复现、能现场演示。</p>
+  <h4>关注方向</h4>
+  <div class="tags"><span>RAG</span><span>Agent</span><span>LangGraph</span><span>MCP</span><span>本地大模型</span></div>
+  <h4>更多内容</h4>
+  <div class="links">
+    <a href="../index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>回到文章列表</a>
+    <a href="http://github.com/Vanity-1" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.55v-2.16c-3.2.7-3.87-1.38-3.87-1.38-.52-1.33-1.28-1.68-1.28-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.03 1.75 2.69 1.25 3.34.95.1-.74.4-1.25.72-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.26.45-2.28 1.18-3.09-.12-.29-.51-1.46.11-3.04 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.74 0c2.18-1.49 3.14-1.18 3.14-1.18.63 1.58.24 2.75.12 3.04.73.81 1.17 1.83 1.17 3.09 0 4.42-2.69 5.38-5.25 5.67.41.35.77 1.05.77 2.12v3.14c0 .31.2.67.8.55A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z"/></svg>GitHub：Vanity-1</a>
+  </div>
+</aside>
+</div>
+
+<footer>本站点托管于 GitHub Pages · 二进制花园</footer>
+<button id="topBtn" aria-label="回到顶部"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg></button>
+<script src="../assets/main.js"></script>
+</body>
+</html>

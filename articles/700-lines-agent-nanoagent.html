@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>700 行手写一个 Agent 框架：NanoAgent 核心原理 | 二进制花园</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<div class="bg-grid"></div><div class="bg-grain"></div>
+<div class="progress" id="progress"></div>
+
+<nav class="nav"><div class="nav-in">
+  <a class="logo" href="../index.html"><span class="mark">
+    <svg viewBox="0 0 24 24" fill="none"><path d="M4 12h4l3 5 3-10 3 5h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    <span>二进制花园</span></a>
+  <div class="nav-links"><a href="../index.html#articles">文章</a><a href="../index.html#projects">项目</a><a href="../index.html#about">关于</a></div>
+</div></nav>
+
+<div class="gutter">
+<article class="article">
+  <div class="art-crumb"><a href="../index.html">首页</a><span>/</span><span>框架解析 · 03</span></div>
+  <h1 class="art-title">700 行手写一个 Agent 框架：<br>NanoAgent 的引擎与原理</h1>
+  <div class="art-meta">
+    <span class="avatar">V</span>
+    <span>Vanity</span><span class="sep">·</span><span>2026-08</span><span class="sep">·</span><span>约 10 分钟</span><span class="sep">·</span><span>Agent 框架 · Python · 源码解析</span>
+  </div>
+
+  <nav class="toc">
+    <div class="t">目录</div>
+    <ul>
+      <li><a href="#s1"><span class="num">1</span>为什么需要手写一个 Agent 框架</a></li>
+      <li><a href="#s2"><span class="num">2</span>核心架构：700 行如何组织一个 Agent</a></li>
+      <li><a href="#s3"><span class="num">3</span>工具系统：把普通函数变成 LLM 工具</a></li>
+      <li><a href="#s4"><span class="num">4</span>运行引擎：reAct 主循环如何执行</a></li>
+      <li><a href="#s5"><span class="num">5</span>上下文管理：对话历史与 Tool Result</a></li>
+      <li><a href="#s6"><span class="num">6</span>模型抽象与流式输出</a></li>
+      <li><a href="#s7"><span class="num">7</span>MCP 集成：接入外部工具生态</a></li>
+      <li><a href="#s8"><span class="num">8</span>总结：学到什么，能怎么用</a></li>
+    </ul>
+  </nav>
+
+  <div class="box info"><span class="bt">一句话结论</span>一个成熟的 Agent 核心只有三件事：<strong>把函数变成 LLM 能调用的工具、让模型在「思考→调工具→看结果」的循环里反复迭代、把每一步可靠地记进上下文</strong>。这三件事完全可以在 <b>700 行 Python 内自洽实现</b>，NanoAgent 就是这样一个极简但完整的框架。</div>
+
+  <h2 id="s1"><span class="n">1</span>为什么需要手写一个 Agent 框架</h2>
+  <p>主流的 Agent 框架（LangChain、Google ADK、OpenAI Agents）功能很全，但都带着<strong>较厚的抽象层</strong>：回调、Pydantic 校验、多模态消息、缓存、记忆管理……对只想「把 LLM + 工具跑通」的场景，这套抽象反而抬高了理解成本。</p>
+  <p>手写一个极简框架的用意不在「替代它们」，而是<strong>用最小闭环讲清楚 Agent 的本质</strong>：工具注册、主循环、上下文这三块一旦亲手实现过，再翻任何框架文档都会快很多——它们其实是同一件事的不同封装。</p>
+  <div class="kpis">
+    <div class="kpi"><div class="v"><span>≈700</span></div><div class="l">核心代码行数</div></div>
+    <div class="kpi"><div class="v"><span>1</span></div><div class="l">主循环 Scan 模式</div></div>
+    <div class="kpi"><div class="v"><span>2</span></div><div class="l">工具形态：本地 + MCP</div></div>
+    <div class="kpi"><div class="v"><span>90+</span></div><div class="l">测试与用例覆盖</div></div>
+  </div>
+  <p class="faint">源码仓库：<code>github.com/Vanity-1/NanoAgent</code> · Python 3.10+ · MIT 协议</p>
+
+  <h2 id="s2"><span class="n">2</span>核心架构：700 行如何组织一个 Agent</h2>
+  <p>NanoAgent 的 <code>src/nanoagent/</code> 只拆成 <b>6 个职责单一的文件</b>，彼此解耦又能拼成一个完整闭环：</p>
+  <pre><span class="lbl">src/nanoagent/</span><code><span class="c"># 六个文件对应六层职责</span>
+<span class="f">agent.py</span>    <span class="c"># Agent 本体：指令 + 工具 + 系统提示聚合</span>
+<span class="f">tool.py</span>    <span class="c"># Tool 抽象 + @function_tool 装饰器 + JSON Schema 生成</span>
+<span class="f">runner.py</span>   <span class="c"># Runner：reAct 主循环（思考 → 调工具 → 看结果）</span>
+<span class="f">context.py</span>  <span class="c"># Context：消息历史 / Token 统计 / 工具调用记录</span>
+<span class="f">model.py</span>    <span class="c"># Model 抽象基类 + OpenAI 实现 + 流式协议</span>
+<span class="f">mcp_tool.py</span> <span class="c"># MCP 集成：把 MCP 服务器导入成统一工具组</span></code></pre>
+  <p>以 <code>Agent</code> 为例，它只是一个 <strong>dataclass</strong>，负责「描述一个智能体」而非「执行」。真正的执行在 <code>Runner</code>：</p>
+  <pre><span class="lbl">agent.py（节选）</span><code><span class="k">@dataclass</span>
+<span class="n">class</span> <span class="f">Agent</span>:
+    name: <span class="k">str</span>
+    instructions: <span class="k">str</span>                    <span class="c"># 角色指令</span>
+    model: <span class="f">Model</span> | <span class="n">None</span> = <span class="n">None</span>       <span class="c"># 默认 OpenAI</span>
+    tools: <span class="k">list</span>[<span class="f">Tool</span> | <span class="f">MCPToolGroup</span>] = <span class="n">default_factory</span>(<span class="k">list</span>)
+
+    <span class="k">def</span> <span class="f">get_system_message</span>(self) -> dict:
+        system = self.instructions
+        <span class="k">if</span> self.tools:
+            names = [t.name <span class="k">for</span> t <span class="k">in</span> self._get_all_tools()]
+            system += <span class="s">f"\n\n你可以使用以下工具: {', '.join(names)}"</span>
+            system += <span class="s">"\n当需要使用工具时，请调用相应的函数。"</span>
+        <span class="k">return</span> {<span class="s">"role"</span>: <span class="s">"system"</span>, <span class="s">"content"</span>: system}
+
+    <span class="k">def</span> <span class="f">get_tools_schema</span>(self) -> <span class="k">list</span>[dict]:
+        <span class="k">return</span> [t.to_dict() <span class="k">for</span> t <span class="k">in</span> self._get_all_tools()]</code></pre>
+  <p>关键点：<code>get_tools_schema()</code> 把工具列表换算成 <strong>OpenAI 兼容的 function-calling schema</strong> 交给模型，模型据此决定「该调哪个工具、传什么参数」。整条链路的输入输出都是普通字典——这正是它能保持轻量的原因。</p>
+
+  <h2 id="s3"><span class="n">3</span>工具系统：把普通函数变成 LLM 工具</h2>
+  <p>工具系统的核心是 <strong>从函数签名自动推导 JSON Schema</strong>。借助 <code>inspect.signature</code> 和 <code>get_type_hints</code>，一个普通 Python 函数加个装饰器就变成 LLM 可调用的工具：</p>
+  <pre><span class="lbl">tool.py</span><code><span class="k">def</span> <span class="f">function_tool</span>(func=<span class="n">None</span>, *, name=<span class="n">None</span>, description=<span class="n">None</span>):
+    <span class="k">def</span> <span class="f">decorator</span>(f):
+        tool_name = name <span class="k">or</span> f.__name__
+        desc = description <span class="k">or</span> f.__doc__ <span class="k">or</span> <span class="nf">f</span>"Function {f.__name__}"
+        <span class="k">return</span> <span class="f">Tool</span>(tool_name, desc, f)
+    <span class="k">return</span> <span class="f">decorator</span>(func) <span class="k">if</span> func <span class="k">else</span> decorator
+
+<span class="k">class</span> <span class="f">Tool</span>:
+    <span class="k">def</span> <span class="f">_generate_schema</span>(self) -> dict:
+        sig = inspect.signature(self.function)
+        hints = get_type_hints(self.function)
+        properties, required = {}, []
+        <span class="k">for</span> pname, p <span class="k">in</span> sig.parameters.items():
+            <span class="k">if</span> hints.get(pname) <span class="k">is</span> <span class="k">int</span>:  ptype = <span class="s">"integer"</span>
+            <span class="k">elif</span> hints.get(pname) <span class="k">is</span> <span class="k">float</span>: ptype = <span class="s">"number"</span>
+            <span class="k">elif</span> hints.get(pname) <span class="k">is</span> <span class="k">bool</span>:  ptype = <span class="s">"boolean"</span>
+            <span class="k">else</span>:                              ptype = <span class="s">"string"</span>
+            properties[pname] = {<span class="s">"type"</span>: ptype}
+            <span class="k">if</span> p.default <span class="k">is</span> inspect.Parameter.empty:
+                required.append(pname)
+        <span class="k">return</span> {<span class="s">"type"</span>: <span class="s">"function"</span>,
+                <span class="s">"function"</span>: {<span class="s">"name"</span>: self.name, <span class="s">"parameters"</span>:
+                    {<span class="s">"type"</span>: <span class="s">"object"</span>, <span class="s">"properties"</span>: properties, <span class="s">"required"</span>: required}}}</code></pre>
+  <p>这样带来的两个直接好处：</p>
+  <ul>
+    <li><b>零配置接入</b>：不需要手写 OpenAI 的 tools 结构，工具函数本身就是描述。</li>
+    <li><b>有默认值即可选</b>：通过 <code>param.default is inspect.Parameter.empty</code> 自动判断必选参数，让模型知道哪些参数必须给。</li>
+  </ul>
+  <div class="box ok"><span class="bt">用法</span><pre style="margin:6px 0 0"><code><span class="k">@function_tool</span>
+<span class="k">def</span> <span class="f">get_weather</span>(city: <span class="k">str</span>) -> <span class="k">str</span>:
+    <span class="s">"""查询某城市实时天气"""</span>
+    <span class="k">return</span> fetch(city)
+
+<span class="f">agent</span> = <span class="f">Agent</span>(name=<span class="s">"assistant"</span>, instructions=<span class="s">"你是助手"</span>,
+               tools=[get_weather])</code></pre></div>
+
+  <h2 id="s4"><span class="n">4</span>运行引擎：reAct 主循环如何执行</h2>
+  <p>Agent 的「智能」来自 <strong>reAct 模式</strong>：模型先给思考/工具调用 → 框架执行工具 → 把结果回填上下文 → 再让模型继续，直到它给出最终答复。NanoAgent 的 <code>Runner.run_stream</code> 就是这个循环：</p>
+  <div class="viz reveal">
+    <h4>reAct 主循环 · 单轮流程</h4>
+    <div class="dline"><span class="lab">Step 1</span><span class="seq"><i class="c">in</i><span class="ar">用户输入 → 追加到上下文</span></span></div>
+    <div class="dline"><span class="lab">Step 2</span><span class="seq"><i class="c">llm</i><span class="ar">模型流式生成 → 增量回答 / 工具调用</span></span></div>
+    <div class="dline"><span class="lab">Step 3</span><span class="seq"><i class="c">tool</i><span class="ar">若含 tool_calls → 解析参数 → 查找执行</span></span></div>
+    <div class="dline"><span class="lab">Step 4</span><span class="seq"><i class="c">ctx</i><span class="ar">工具结果 add_tool_call 回填 → 回到 Step 2</span></span></div>
+    <div class="dline"><span class="lab">Exit</span><span class="seq"><i class="c">ans</i><span class="ar">无 tool_calls → 输出最终回答并返回</span></span></div>
+  </div>
+  <p>执行的核心代码：</p>
+  <pre><span class="lbl">runner.py · run_stream（节选）</span><code><span class="k">for</span> turn <span class="k">in</span> range(max_turns):
+    <span class="c"># 1. 把当前消息交给模型，得到流式增量</span>
+    stream_gen = agent.model.generate_stream(messages, tools_schema)
+    full = <span class="s">""</span><span class="k">; response</span> = <span class="n">None</span>
+    <span class="k">for</span> item <span class="k">in</span> stream_gen:
+        <span class="k">if</span> isinstance(item, ModelResponse): response = item; <span class="k">break</span>
+        <span class="k">if</span> item.content: full += item.content; <span class="k">yield</span> answer_delta(item.content)
+
+    <span class="c"># 2. 无工具调用 → 直接给出最终回答</span>
+    <span class="k">if</span> response <span class="k">and not</span> response.tool_calls:
+        context.add_message(<span class="s">"assistant"</span>, full)
+        <span class="k">return</span> RunResult(full, context)
+
+    <span class="c"># 3. 有工具调用 → 逐个执行并回填</span>
+    <span class="k">for</span> tc <span class="k">in</span> response.tool_calls:
+        tool = agent.find_tool(tc[<span class="s">"function"</span>][<span class="s">"name"</span>])
+        result = tool.execute(json.loads(tc[<span class="s">"function"</span>][<span class="s">"arguments"</span>]))
+        context.add_tool_call(tool.name, args, result.result)  <span class="c"># 回填</span></code></pre>
+  <p>几个有工程味道的细节：</p>
+  <ul>
+    <li><b>最大轮次兜底</b>：<code>max_turns</code> 默认 10，防止模型在工具循环里出不来。</li>
+    <li><b>JSON 容错</b>：模型偶尔返回不合法 JSON 参数，先 <code>json.loads</code>，失败再回退 <code>eval</code>，再失败给空参。</li>
+    <li><b>失败结果也是事件</b>：工具找不到、执行报错都会以 <code>ERROR</code> 事件暴露，而不是静默吞掉——这对调试很关键。</li>
+  </ul>
+
+  <h2 id="s5"><span class="n">5</span>上下文管理：对话历史与 Tool Result</h2>
+  <p>reAct 循环能否收敛，取决于<strong>工具调用及其结果是否正确写入上下文</strong>。OpenAI 的 tool-calling 协议要求：assistant 消息携带 <code>tool_calls</code>，且每个 tool_call 都要有对应的 <code>role=tool</code> 结果消息。Context 把这个协议封装成 <code>add_tool_call</code>：</p>
+  <pre><span class="lbl">context.py · add_tool_call</span><code><span class="k">def</span> <span class="f">add_tool_call</span>(self, tool_name, arguments, result):
+    <span class="c"># 若上一条 assistant 已有 tool_calls → 追加；否则新建一条</span>
+    <span class="k">for</span> last <span class="k">in</span> messages_check:
+        <span class="c"># 合并「上一段思考内容 + 本次工具调用」到同一条 assistant 消息</span>
+        ...
+    <span class="c"># 追加 role=tool 的返回值消息，与 tool_call_id 绑定</span>
+    self.messages.append({
+        <span class="s">"role"</span>: <span class="s">"tool"</span>, <span class="s">"name"</span>: tool_name,
+        <span class="s">"content"</span>: result, <span class="s">"tool_call_id"</span>: tid})</code></pre>
+  <p>这一层还顺带管理了<strong>多轮对话的延续</strong>：<code>context</code> 在多次 <code>run()</code> 之间复用时，消息历史被保留，模型能看到之前的对话与工具结果，从而形成连贯的多轮 Agent。Token 用量也在这里累加统计（<code>Usage</code>）。</p>
+
+  <h2 id="s6"><span class="n">6</span>模型抽象与流式输出</h2>
+  <p>框架只依赖 <code>Model</code> 抽象基类，默认实现 <code>OpenAIModel</code>。这意味着<strong>任何兼容 OpenAI Chat Completions 协议的服务</strong>（含本地 Ollama、各种网关）只要配一个 <code>base_url</code> 就能接入：</p>
+  <pre><span class="lbl">model.py</span><code><span class="n">class</span> <span class="f">Model</span>(ABC):
+    <span class="k">@abstractmethod</span>
+    <span class="k">def</span> <span class="f">generate</span>(self, messages, tools=None) -> ModelResponse: ...
+    <span class="k">def</span> <span class="f">generate_stream</span>(self, messages, tools=None):   <span class="c"># 可选</span>
+        <span class="c"># 默认实现：整段生成后逐字符 yield</span>
+
+<span class="n">class</span> <span class="f">OpenAIModel</span>(Model):
+    <span class="k">def</span> <span class="f">__init__</span>(self, model=<span class="n">None</span>, api_key=<span class="n">None</span>, base_url=<span class="n">None</span>, **kw):
+        self.model_name = model <span class="k">or</span> os.getenv(<span class="s">"MODEL"</span>, <span class="s">"gpt-3.5-turbo"</span>)
+        self.api_key = api_key <span class="k">or</span> os.getenv(<span class="s">"API_KEY"</span>)
+        self.base_url = base_url <span class="k">or</span> os.getenv(<span class="s">"BASE_URL"</span>)   <span class="c"># 兼容本地/网关</span>
+        self.client = <span class="f">OpenAI</span>(api_key=self.api_key, base_url=self.base_url)</code></pre>
+  <p>流式输出通过 <code>StreamEvent</code> 暴露，类型包含 <code>QUESTION / THINKING / TOOL_CALL / TOOL_RESULT / ANSWER / ANSWER_DELTA / ERROR</code>。前端或终端可以据此渲染「正在思考」「正在调用工具」这类实时状态，而不是干等最终结果。</p>
+
+  <h2 id="s7"><span class="n">7</span>MCP 集成：接入外部工具生态</h2>
+  <p>真正让这个 700 行框架「不小」的，是它对 <strong>MCP（Model Context Protocol）</strong> 的原生支持。MCP 把外部工具（地图、数据库、办公套件等）标准化成可独立启动的服务器；NanoAgent 用 <code>MCPClient</code> 连接一个 MCP server，并把它<strong>包装成和本地工具同构的 <code>MCPToolGroup</code></strong>，从而混用两种工具：</p>
+  <pre><span class="lbl">mcp_tool.py（用法）</span><code>pool = <span class="f">MCPToolPool</span>()
+amap = <span class="k">await</span> pool.add_mcp_server(
+    <span class="s">"amap"</span>,
+    command=<span class="s">"npx"</span>, args=[<span class="s">"-y"</span>, <span class="s">"@amap/amap-maps-mcp-server"</span>],
+    tools=[<span class="s">"search_location"</span>])          <span class="c"># 可选，默认导入全部</span>
+
+agent = <span class="f">Agent</span>(tools=[<span class="f">calculate</span>, amap])    <span class="c"># 本地函数 + MCP 工具组混用</span></code></pre>
+  <p>对比直接写死某个第三方 API，MCP 带来的价值是<strong>统一接入协议 + 进程隔离</strong>：每个 MCP server 是独立进程，崩溃不影响主框架；工具名、参数 schema 由 mcp.initialize 协商出来，框架只需把 MCP 工具映射成自己的 <code>Tool</code> 即可。</p>
+  <div class="box warn"><span class="bt">取舍</span>MCP SDK（<code>mcp&gt;=1.12</code>）是运行时可选依赖——<b>不装也能用纯本地工具</b>，装了才启用 MCP 能力。这是「轻量」与「可扩展」之间的刻意平衡，符合小框架「按需加容量」的原则。</div>
+
+  <h2 id="s8"><span class="n">8</span>总结：学到什么，能怎么用</h2>
+  <ul>
+    <li><span class="good">✓ 一个 Agent = 系统提示 + 工具 schema + reAct 主循环 + 上下文</span>，四者缺一不可但都可独立替换。</li>
+    <li><span class="good">✓ 从函数签名自动生成 JSON Schema</span>，是工具系统「零配置」的关键。</li>
+    <li><span class="good">✓ 流式事件让「思考中 / 调工具中」可见</span>，用户体验远好于等待整段返回。</li>
+    <li><span class="good">✓ 薄抽象 + 按需依赖</span>，核心 700 行，却能通过 MCP 对接任意工具生态。</li>
+  </ul>
+  <blockquote>对想真正理解 Agent 的同学，我建议<strong>先手写一个十几轮能跑的 mini 版</strong>，再回头看框架文档——你会发现大部分「魔法」都只是这套模式的封装。NanoAgent 提供了可读性极高的参考实现。</blockquote>
+
+  <div class="artnav">
+    <a href="rrf-vs-plain-experiment.html"><div class="dir">上一篇</div><div class="nm">← RRF 融合 vs 直接拼接：命中率 9/12 → 12/12</div></a>
+    <a href="clipmind-video-knowledge-base.html"><div class="dir">下一篇</div><div class="nm">ClipMind：把收藏视频变成可对话的知识库 →</div></a>
+  </div>
+</article>
+
+<aside class="pkcard">
+  <div class="top">
+    <span class="avatar">V</span>
+    <div>
+      <div class="nm">Vanity</div>
+      <div class="rol">RAG · Agent 工程实践者</div>
+    </div>
+  </div>
+  <p class="bio">软件工程方向，专注检索增强与大模型 Agent 的工程落地。比起"功能能跑"，更在意可靠、可复现、能现场演示。</p>
+  <h4>关注方向</h4>
+  <div class="tags"><span>RAG</span><span>Agent</span><span>LangGraph</span><span>MCP</span><span>本地大模型</span></div>
+  <h4>更多内容</h4>
+  <div class="links">
+    <a href="../index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>回到文章列表</a>
+    <a href="http://github.com/Vanity-1" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.55v-2.16c-3.2.7-3.87-1.38-3.87-1.38-.52-1.33-1.28-1.68-1.28-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.03 1.75 2.69 1.25 3.34.95.1-.74.4-1.25.72-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.26.45-2.28 1.18-3.09-.12-.29-.51-1.46.11-3.04 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.74 0c2.18-1.49 3.14-1.18 3.14-1.18.63 1.58.24 2.75.12 3.04.73.81 1.17 1.83 1.17 3.09 0 4.42-2.69 5.38-5.25 5.67.41.35.77 1.05.77 2.12v3.14c0 .31.2.67.8.55A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z"/></svg>GitHub：Vanity-1</a>
+  </div>
+</aside>
+</div>
+
+<footer>本站点托管于 GitHub Pages · 二进制花园</footer>
+<button id="topBtn" aria-label="回到顶部"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg></button>
+<script src="../assets/main.js"></script>
+</body>
+</html>
