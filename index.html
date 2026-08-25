@@ -259,19 +259,15 @@
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-9 8.4 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.2a8.4 8.4 0 1 1 16.1-4.3z"/></svg>
 </button>
 
-<!-- Giscus 留言板加载（category-id 占位，启用 Discussions 后替换） -->
+<!-- Giscus 留言板加载 -->
 <script>
 (function(){
   var g=document.getElementById('giscus');
   if(!g) return;
   var REPO='Vanity-1/Vanity-1.github.io';
   var REPO_ID='R_kgDOUAvTBQ';
-  var CATEGORY='Announcements';           // 启用 Discussions 后确认实际分类名
-  var CATEGORY_ID='__GISCUS_CATEGORY_ID__'; // TODO: 启用后填入真实 id，形如 DIC_kwDO...
-  if(!CATEGORY_ID || CATEGORY_ID.indexOf('__GISCUS')===0){
-    g.innerHTML='<div style="padding:14px;border:1px dashed var(--line);border-radius:12px;color:var(--ink-faint);font-size:13px;line-height:1.8">留言板待启用 —— 在 GitHub 仓库开启 Discussions 后即可留言。</div>';
-    return;
-  }
+  var CATEGORY='General';            // 留言分类：仓库 Discussions 的 General
+  var CATEGORY_ID='DIC_kwDOUAvTBc4DEH5u';
   var s=document.createElement('script');
   s.src='https://giscus.app/client.js';
   s.setAttribute('data-repo',REPO);
