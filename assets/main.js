@@ -81,21 +81,4 @@
       if(r.top<innerHeight*.92){ clearInterval(tick); b.style.width=b.getAttribute('data-bar'); }
     },120);
   });
-
-  /* ---------- 移动端侧栏抽屉（首页） ---------- */
-  const side=document.querySelector('.home-side'),
-        toggle=document.getElementById('sideToggle'),
-        overlay=document.getElementById('sideOverlay');
-  if(side&&toggle&&overlay){
-    const close=()=>{ ['home-side','side-overlay'].forEach(c=>document.querySelector('.'+c).classList.remove('open')); toggle.setAttribute('aria-label','打开个人简介与留言'); };
-    toggle.addEventListener('click',()=>{
-      const open=side.classList.toggle('open');
-      overlay.classList.toggle('open',open);
-      toggle.setAttribute('aria-label',open?'收起个人简介与留言':'打开个人简介与留言');
-    });
-    overlay.addEventListener('click',close);
-    addEventListener('keydown',e=>{ if(e.key==='Escape') close(); });
-    addEventListener('resize',()=>{ if(innerWidth>640) close(); });
-    close();
-  }
 })();

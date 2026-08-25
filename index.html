@@ -47,15 +47,7 @@
     <div class="chip"><div class="v grad-text"><span data-count="700">0</span>*</div><div class="l">手写 Agent 核心行数</div></div>
     <div class="chip"><div class="v grad-text"><span data-count="2">0</span></div><div class="l">平台接入（视频知识库）</div></div>
   </div>
-  <div class="vbar">
-    <span class="avatar">V</span>
-    <span class="t">你好，我是 <b>Vanity</b>——软件工程方向，专注 <b>RAG</b> 与 <b>Agent</b> 的工程落地。</span>
-    <a href="https://github.com/Vanity-1" target="_blank" rel="noopener">GitHub →</a>
-  </div>
 </header>
-
-<div class="home-layout">
-<div class="hm-main">
 
 <!-- 文章 -->
 <section id="articles">
@@ -268,6 +260,19 @@
     <h2 class="sec-title"><span class="idx">04</span>关于</h2>
   </div>
   <div class="about">
+    <div class="bio reveal profile-bio">
+      <div class="phead">
+        <span class="avatar">V</span>
+        <div>
+          <div class="nm">Vanity</div>
+          <div class="rol">RAG · Agent 工程实践者</div>
+        </div>
+      </div>
+      <p>写代码的普通人，主业检索增强和大模型 Agent 的落地。踩过的坑会整理成文章，尽量一次讲明白、能复现，欢迎一起聊。</p>
+      <h4>关注方向</h4>
+      <div class="tags"><span>RAG</span><span>Agent</span><span>LangGraph</span><span>MCP</span><span>本地大模型</span></div>
+      <a class="gh-link" href="https://github.com/Vanity-1" target="_blank" rel="noopener">GitHub →</a>
+    </div>
     <div class="bio reveal">
       <h3>关于我</h3>
       <p>软件工程方向，关注 <b>检索增强生成（RAG）与 AI Agent 的工程落地</b>。相比「把功能做出来」，更在意把项目打磨到 <b>可靠、可复现、可现场演示</b>。</p>
@@ -289,28 +294,17 @@
   </div>
 </section>
 
-</div><!-- /hm-main -->
-
-<aside class="home-side">
-  <div class="pkcard">
-    <div class="top">
-      <span class="avatar">V</span>
-      <div>
-        <div class="nm">Vanity</div>
-        <div class="rol">RAG · Agent 工程实践者</div>
-      </div>
-    </div>
-    <p class="bio">写代码的普通人，主业检索增强和大模型 Agent 的落地。踩过的坑会整理成文章，尽量一次讲明白、能复现，欢迎一起聊。</p>
+<!-- 留言板 -->
+<section id="guestbook" class="guestbook">
+  <div class="sec-head reveal">
+    <h2 class="sec-title"><span class="idx">05</span>留言板</h2>
+    <a class="sec-more" href="https://github.com/Vanity-1/Vanity-1.github.io/discussions" target="_blank" rel="noopener">GitHub Discussions →</a>
   </div>
-
-  <div class="msg-card">
-    <div class="msg-head"><span class="dotc"></span>留言板</div>
+  <div class="msg-card reveal">
     <div class="msg-sub">欢迎在这里留言交流，评论存于 GitHub Discussions。</div>
     <div id="giscus" class="giscus"></div>
   </div>
-</aside>
-
-</div><!-- /home-layout -->
+</section>
 
 <footer>
   本站点托管于 GitHub Pages
@@ -328,11 +322,6 @@
 
 <button id="topBtn" aria-label="回到顶部">
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
-</button>
-
-<div class="side-overlay" id="sideOverlay"></div>
-<button class="side-toggle" id="sideToggle" aria-label="打开个人简介与留言">
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-9 8.4 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.2a8.4 8.4 0 1 1 16.1-4.3z"/></svg>
 </button>
 
 <!-- Giscus 留言板加载 -->
