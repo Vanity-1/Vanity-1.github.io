@@ -42,8 +42,8 @@
     <a class="btn btn-ghost" href="#projects">看落地项目</a>
   </div>
   <div class="stats reveal">
-    <div class="chip"><div class="v grad-text"><span data-count="4">0</span></div><div class="l">技术文章</div></div>
-    <div class="chip"><div class="v grad-text"><span data-count="4">0</span></div><div class="l">落地项目</div></div>
+    <div class="chip"><div class="v grad-text"><span data-count="5">0</span></div><div class="l">技术文章</div></div>
+    <div class="chip"><div class="v grad-text"><span data-count="5">0</span></div><div class="l">落地项目</div></div>
     <div class="chip"><div class="v grad-text"><span data-count="700">0</span>*</div><div class="l">手写 Agent 核心行数</div></div>
     <div class="chip"><div class="v grad-text"><span data-count="2">0</span></div><div class="l">平台接入（视频知识库）</div></div>
   </div>
@@ -134,6 +134,24 @@
       <p class="desc">B站/抖音收藏夹同步、ASR 转写、向量入库、RAG 问答追溯来源——一个本地优先视频知识库的工程取舍。</p>
       <div class="foot"><span>约 9 分钟</span><span class="ctl">阅读 <span>→</span></span></div>
     </a>
+    <a class="card reveal" href="articles/inference-gateway.html">
+      <div class="art art-ig">
+        <svg viewBox="0 0 400 120" preserveAspectRatio="xMidYMid slice">
+          <g font-size="13" font-family="monospace" text-anchor="middle">
+            <text x="200" y="40" fill="#38e0e0">route</text>
+            <text x="200" y="60" fill="#ffcf6b">cache</text>
+            <text x="200" y="80" fill="#ff8fb8">validate</text>
+          </g>
+          <g fill="#38e0e0"><circle cx="60" cy="60" r="4"/><circle cx="340" cy="60" r="4"/></g>
+          <path d="M70 60 H330" stroke="rgba(56,224,224,.5)" stroke-dasharray="4 4"/>
+          <g fill="#5bf0b0"><circle cx="120" cy="95" r="3"/><circle cx="200" cy="20" r="3"/><circle cx="280" cy="95" r="3"/></g>
+        </svg>
+      </div>
+      <div class="tag-row"><span class="badge b">工程实战</span><span class="badge">推理网关</span><span class="badge">缓存</span></div>
+      <h3>本地推理网关：给 ollama 加一层路由 + 缓存 + 校验</h3>
+      <p class="desc">多模型路由、提示缓存、结构化输出校验与回退——三个问题一次收口，缓存命中延迟从 208ms 降到 0.04ms。</p>
+      <div class="foot"><span>约 8 分钟</span><span class="ctl">阅读 <span>→</span></span></div>
+    </a>
   </div>
 </section>
 
@@ -166,6 +184,12 @@
       <h3>ClipMind：本地优先视频知识库</h3>
       <p class="desc">B站/抖音收藏自动同步、ASR 转写、ChromaDB 向量入库、RAG 对话追溯来源；云端/本地双模式，数据不出机。</p>
       <div class="foot"><span>FastAPI + Next.js + Tauri</span><span class="ctl">GitHub <span>→</span></span></div>
+    </a>
+    <a class="card reveal" href="https://github.com/Vanity-1/inference-gateway" target="_blank" rel="noopener">
+      <div class="tag-row"><span class="badge p">推理网关</span><span class="badge">缓存</span><span class="badge">结构化输出</span></div>
+      <h3>Inference Gateway：本地推理网关</h3>
+      <p class="desc">ollama 之上的网关层：多模型路由 + 健康降级、响应缓存与 KV 前缀复用、结构化输出校验重试回退；41 单测 + 一键基准。</p>
+      <div class="foot"><span>FastAPI · 41 测试 · 基准可复现</span><span class="ctl">GitHub <span>→</span></span></div>
     </a>
   </div>
 </section>
@@ -246,6 +270,7 @@
     <a href="https://github.com/Vanity-1/langgraph-retail-assistant" target="_blank" rel="noopener">LangGraph 项目</a>
     <a href="https://github.com/Vanity-1/NanoAgent" target="_blank" rel="noopener">NanoAgent 框架</a>
     <a href="https://github.com/Vanity-1/ClipMind" target="_blank" rel="noopener">ClipMind</a>
+    <a href="https://github.com/Vanity-1/inference-gateway" target="_blank" rel="noopener">推理网关</a>
     <a href="https://github.com/Vanity-1" target="_blank" rel="noopener">GitHub 主页</a>
   </div>
 </footer>
