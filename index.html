@@ -42,8 +42,8 @@
     <a class="btn btn-ghost" href="#projects">看落地项目</a>
   </div>
   <div class="stats reveal">
-    <div class="chip"><div class="v grad-text"><span data-count="5">0</span></div><div class="l">技术文章</div></div>
-    <div class="chip"><div class="v grad-text"><span data-count="5">0</span></div><div class="l">落地项目</div></div>
+    <div class="chip"><div class="v grad-text"><span data-count="6">0</span></div><div class="l">技术文章</div></div>
+    <div class="chip"><div class="v grad-text"><span data-count="6">0</span></div><div class="l">落地项目</div></div>
     <div class="chip"><div class="v grad-text"><span data-count="700">0</span>*</div><div class="l">手写 Agent 核心行数</div></div>
     <div class="chip"><div class="v grad-text"><span data-count="2">0</span></div><div class="l">平台接入（视频知识库）</div></div>
   </div>
@@ -152,6 +152,25 @@
       <p class="desc">多模型路由、提示缓存、结构化输出校验与回退——三个问题一次收口，缓存命中延迟从 208ms 降到 0.04ms。</p>
       <div class="foot"><span>约 8 分钟</span><span class="ctl">阅读 <span>→</span></span></div>
     </a>
+    <a class="card reveal" href="articles/edu-db-readonly-gateway.html">
+      <div class="art art-lock">
+        <svg viewBox="0 0 400 120" preserveAspectRatio="xMidYMid slice">
+          <g fill="none" stroke-linecap="round">
+            <path d="M80 60 h45" stroke="rgba(56,224,224,.6)" stroke-width="1.5"/>
+            <path d="M95 60 v-12 a15 15 0 0 1 30 0 v12" stroke="rgba(56,224,224,.9)" stroke-width="2"/>
+            <rect x="80" y="60" width="60" height="34" rx="6" stroke="rgba(255,207,107,.7)" stroke-width="2"/>
+            <circle cx="110" cy="76" r="4" fill="#ffcf6b"/>
+            <path d="M110 76 v8" stroke="#ffcf6b" stroke-width="2"/>
+            <path d="M205 40 C240 60,220 80,260 72 S300 100,320 82" stroke="rgba(155,140,255,.5)" stroke-width="1.5" fill="none"/>
+            <text x="205" y="100" font-size="13" font-family="monospace" fill="#7ff2ef">SELECT · read-only</text>
+          </g>
+        </svg>
+      </div>
+      <div class="tag-row"><span class="badge b">工程实战</span><span class="badge">MCP</span><span class="badge">数据安全</span></div>
+      <h3>给业务库加一道只读网关：不写一条数据，也能放心交给 Agent 查</h3>
+      <p class="desc">词法校验 + 参数绑定 + 强制 LIMIT + mode=ro 四层纵深防御；Token 鉴权与审计留痕，让 Agent 安全查库。</p>
+      <div class="foot"><span>约 7 分钟</span><span class="ctl">阅读 <span>→</span></span></div>
+    </a>
   </div>
 </section>
 
@@ -190,6 +209,12 @@
       <h3>Inference Gateway：本地推理网关</h3>
       <p class="desc">ollama 之上的网关层：多模型路由 + 健康降级、响应缓存与 KV 前缀复用、结构化输出校验重试回退；41 单测 + 一键基准。</p>
       <div class="foot"><span>FastAPI · 41 测试 · 基准可复现</span><span class="ctl">GitHub <span>→</span></span></div>
+    </a>
+    <a class="card reveal" href="https://github.com/Vanity-1/edu-db-readonly-mcp" target="_blank" rel="noopener">
+      <div class="tag-row"><span class="badge b">数据安全</span><span class="badge">MCP</span><span class="badge">FastMCP</span></div>
+      <h3>Edu DB Readonly Gateway：教育教务只读数据库网关 MCP</h3>
+      <p class="desc">四层纵深防御的只读 SQL 网关：词法校验 + 参数绑定 + 强制 LIMIT + mode=ro；Token 鉴权与审计留痕。</p>
+      <div class="foot"><span>官方 SDK · 26 测试 · 端到端 demo</span><span class="ctl">GitHub <span>→</span></span></div>
     </a>
   </div>
 </section>
@@ -271,6 +296,7 @@
     <a href="https://github.com/Vanity-1/NanoAgent" target="_blank" rel="noopener">NanoAgent 框架</a>
     <a href="https://github.com/Vanity-1/ClipMind" target="_blank" rel="noopener">ClipMind</a>
     <a href="https://github.com/Vanity-1/inference-gateway" target="_blank" rel="noopener">推理网关</a>
+    <a href="https://github.com/Vanity-1/edu-db-readonly-mcp" target="_blank" rel="noopener">只读数据库网关</a>
     <a href="https://github.com/Vanity-1" target="_blank" rel="noopener">GitHub 主页</a>
   </div>
 </footer>

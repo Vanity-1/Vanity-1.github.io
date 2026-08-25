@@ -151,6 +151,8 @@ section{max-width:var(--maxw);margin:0 auto;padding:44px 24px}
 .art-na svg{position:absolute;inset:0;width:100%;height:100%}
 .art-cm{background:linear-gradient(135deg,#261a34 0%,#2a1f3a 55%,#12303a 100%)}
 .art-cm svg{position:absolute;inset:0;width:100%;height:100%}
+.art-lock{background:linear-gradient(135deg,#122b33 0%,#1d2342 55%,#261a34 100%)}
+.art-lock svg{position:absolute;inset:0;width:100%;height:100%}
 
 /* 技能栈徽章墙 */
 .skills{display:flex;flex-wrap:wrap;gap:10px}
