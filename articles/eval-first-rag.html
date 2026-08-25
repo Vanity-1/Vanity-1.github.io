@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>检索评测优先的 RAG：别急着调优，先搞清检索到底行不行 | 二进制花园</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<div class="bg-grid"></div><div class="bg-grain"></div>
+<div class="progress" id="progress"></div>
+
+<nav class="nav"><div class="nav-in">
+  <a class="logo" href="../index.html"><span class="mark">
+    <svg viewBox="0 0 24 24" fill="none"><path d="M4 12h4l3 5 3-10 3 5h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    <span>二进制花园</span></a>
+  <div class="nav-links"><a href="../index.html#articles">文章</a><a href="../index.html#projects">项目</a><a href="../index.html#about">关于</a></div>
+</div></nav>
+
+<div class="gutter">
+<article class="article">
+  <div class="art-crumb"><a href="../index.html">首页</a><span>/</span><span>工程实战 · 06</span></div>
+  <h1 class="art-title">检索评测优先的 RAG：<br>别急着调优，先搞清 <span class="grad-text">检索到底行不行</span></h1>
+  <div class="art-meta">
+    <span class="avatar">V</span>
+    <span>Vanity</span><span class="sep">·</span><span>2026-08</span><span class="sep">·</span><span>约 8 分钟</span><span class="sep">·</span><span>RAG · 检索评测 · RRF 融合 · 失败归因</span>
+  </div>
+
+  <nav class="toc">
+    <div class="t">目录</div>
+    <ul>
+      <li><a href="#s1"><span class="num">1</span>为什么要评估优先</a></li>
+      <li><a href="#s2"><span class="num">2</span>评测集怎么构建</a></li>
+      <li><a href="#s3"><span class="num">3</span>三套策略同语料对比</a></li>
+      <li><a href="#s4"><span class="num">4</span>失败归因：把问题分层</a></li>
+      <li><a href="#s5"><span class="num">5</span>忠实性校验</a></li>
+      <li><a href="#s6"><span class="num">6</span>结论与下一步</a></li>
+    </ul>
+  </nav>
+
+  <div class="box info"><span class="bt">一句话结论</span>主流 RAG 简历都只证明「能答」，无法回答「检索到底行不行、差在哪、为什么这么调」。这个项目不交付又一个 RAG demo，而是交付<strong>怎么证明 RAG 有效的评测资产</strong>：517 条固定评测集 + 多策略对比 + 失败归因 + 忠实性校验，一次运行产出可复现的数字。代码在 <a href="https://github.com/Vanity-1/eval-first-rag" target="_blank" rel="noopener">github.com/Vanity-1/eval-first-rag</a>。</div>
+
+  <h2 id="s1"><span class="n">1</span>为什么要评估优先</h2>
+  <p>主流 RAG 简历项目普遍长这样：手搭一个检索 + LLM，喂几句产品文档，贴几张问答截图。面试官一旦追问三个问题就露馅：<strong>检索质量怎么量化？为什么这么调融合？失败长什么样？</strong></p>
+  <ul>
+    <li><b>检索质量怎么量化</b>：连 hit@k、Recall、NDCG 都说不清，只知道"感觉答上了"。</li>
+    <li><b>为什么这么调</b>：RRF、双信号融合、源权重，全是抄来的标配，说不出取舍。</li>
+    <li><b>失败长什么样</b>：从不记录 miss，说不清是排序问题还是检索缺口。</li>
+  </ul>
+  <p>所以思路反过来：<strong>evaluation-first</strong>。先把检索质量拆成可比较、可归因、可复现的指标闭环，用一组固定评测集 + 固定策略对比跑出数字，再逐条分析根因。调优是第二步，评测是第一步。</p>
+  <div class="kpis">
+    <div class="kpi"><div class="v"><span data-count="517">0</span></div><div class="l">评测查询（seed=42 可复现）</div></div>
+    <div class="kpi"><div class="v"><span data-count="100">0</span>%</div><div class="l">easy 层 hit@5</div></div>
+    <div class="kpi"><div class="v">0→100%</div><div class="l">跨源 hit@5（RRF 修复）</div></div>
+    <div class="kpi"><div class="v"><span data-count="6">0</span></div><div class="l">离线单元测试</div></div>
+  </div>
+  <p class="faint">零环境依赖：只读预计算 embedding 缓存 + numpy 内存余弦扫描，无需 Chroma 常驻；仅查询编码走本地 Ollama。整仓 <code>pip install numpy requests pytest</code> 即可离线复现。</p>
+
+  <h2 id="s2"><span class="n">2</span>评测集怎么构建</h2>
+  <p>评测集是整套可信度的地基，分两层构造：</p>
+  <ul>
+    <li><b>程序化 known-item retrieval（KIR）</b>：从真实目录采样 <code>easy</code>（精确品名）和 <code>medium</code>（属性 + 核心词改写）查询，ground truth 是唯一 product_id。默认 300 + 200 条。</li>
+    <li><b>手工 curated hard</b>：政策、跨源、易混淆、噪字查询，gold 是相关集，专测难边界。</li>
+  </ul>
+  <p>相关性用三套 gold 模式，对应三种经典检索评测任务：</p>
+  <div class="tbl"><table>
+    <tr><th>gold 模式</th><th>语义</th><th>测什么</th></tr>
+    <tr><td><code>product_id</code></td><td>query 精确/改写指向唯一产品</td><td>能否定位已知目标（KIR）</td></tr>
+    <tr><td><code>terms</code></td><td>相关文档是一组（如所有退货政策）</td><td>多相关下的 Recall / Precision / NDCG</td></tr>
+    <tr><td><code>cross</code>（AND）</td><td>须<strong>同时覆盖</strong>政策与产品源才算命中</td><td>单源永远无法满足 → 多源融合必要性被量化</td></tr>
+  </table></div>
+  <div class="box ok"><span class="bt">可复现的关键</span>固定随机种子 <b>42</b>，任何机器重跑 <code>scripts/build_eval_set.py</code> 都得到同一份评测集——这决定了后续所有数字能不能被独立验证。</div>
+  <p>难度分层 <code>easy → medium → hard</code> 还有一个作用：<strong>观察检索在哪个难度开始崩塌</strong>，而不是只看一个笼统的平均分。</p>
+
+  <h2 id="s3"><span class="n">3</span>三套策略同语料对比</h2>
+  <p>策略必须是同语料、同参数、同一份评测集，唯一变量是融合策略，对比才公平：</p>
+  <ul>
+    <li><code>single</code>：针对性单源（目录查询只检 catalog）</li>
+    <li><code>plain</code>：多源拼接 keep-first</li>
+    <li><code>rrf</code>：Reciprocal Rank Fusion 融合</li>
+  </ul>
+  <p>517 条查询跑完，总体 hit@5 最高的反而是 <code>single</code>（91.9%），但这掩盖了真相。按查询类型拆分后，结论完全反转：</p>
+  <div class="tbl"><table>
+    <tr><th>type（n）</th><th>single</th><th>plain</th><th>rrf</th></tr>
+    <tr><td>catalog 目录（506）</td><td class="good">92.7%</td><td class="good">92.7%</td><td>88.7%</td></tr>
+    <tr><td>policy 政策（6）</td><td class="good">100%</td><td>16.7%</td><td class="good">100%</td></tr>
+    <tr><td><strong>cross 跨源（5）</strong></td><td>0%</td><td>0%</td><td class="good">100%</td></tr>
+  </table></div>
+  <p>三个发现：</p>
+  <ul>
+    <li><b>known-item 检索 single 才是最优</b>：纯目录定位，针对性单源又快又准，多源融合反而是多余的。</li>
+    <li><b>plain 会把政策文档挤掉</b>：多源拼接 keep-first，catalog 占满前几名，政策文档（n=6）掉出视野，命中 16.7%。</li>
+    <li><b>cross 只有 rrf 能救</b>：跨源查询必须同时覆盖政策 + 产品两个源，single / plain 一个源永远不满足，rrf 从 0% 打到 100%——<strong>多源融合的必要性由此被量化</strong>。</li>
+  </ul>
+  <div class="box warn"><span class="bt">小源偏袒是真实代价</span>policies 只有 8 条，任何查询都会被它排进源内高 rank，融合后对纯目录查询形成噪声——这就是 rrf 的 catalog hit@5 略低于 single 的原因。不是 bug，是融合本身的特性，后续可做<strong>源权重 / 查询分类降级</strong>缓解。</div>
+  <p>一句话：<strong>单源与多源要分场景，「融合一定更好」是错觉。</strong></p>
+
+  <h2 id="s4"><span class="n">4</span>失败归因：把问题分层</h2>
+  <p>只看命中率不知道往哪使劲。把每条 miss 归因成两类：</p>
+  <ul>
+    <li><b>recall_failure</b>：gold 根本没进 top-k（检索缺口，融合也救不了）</li>
+    <li><b>ranking_failure</b>：gold 在 top-k 里但排位靠后（排序 / 融合的问题）</li>
+  </ul>
+  <p>plain → rrf 的差分是最有意思的部分：</p>
+  <div class="viz reveal">
+    <h4>plain → rrf 融合差分</h4>
+    <div class="bar-row"><span class="lab">rescues（找回）</span><div class="bar-track"><div class="bar rrf" data-bar="100%"></div></div><span class="bar-val good">5</span></div>
+    <div class="bar-row"><span class="lab">loses（丢失）</span><div class="bar-track"><div class="bar plain" data-bar="0%"></div></div><span class="bar-val good">0</span></div>
+    <div class="bar-row"><span class="lab">both_fail（都检索不到）</span><div class="bar-track"><div class="bar plain" data-bar="45%"></div></div><span class="bar-val">37</span></div>
+  </div>
+  <p>关键在于 <code>both_fail = 37</code>：plain 和 rrf 都无法命中的查询，才是融合救不回来的<strong>真正检索缺口</strong>，指向 embedding / 分段粒度 / 同义词，而不是融合策略。把这 37 条拎出来逐条看，比改参数有价值得多。</p>
+  <blockquote>失败的归因价值在于：<strong>先分清「融合该不该背锅」，再去对症下药</strong>。37 条 both_fail 指向的是语料/编码层，5 条 rescues 证明融合本身在干活。</blockquote>
+
+  <h2 id="s5"><span class="n">5</span>忠实性校验</h2>
+  <p>检索对了，不代表模型不乱编。忠实性校验是可靠性最后一道闸：本地 <code>qwen2.5:3b</code> 基于检索上下文生成回答，再用一个 judge 标注 <code>grounded / partially / ungrounded</code>，结论是否基于给定上下文。磁盘缓存保证可复现。</p>
+  <p>本机跑 8 例：<strong>grounded 7 / 8</strong>。唯一一例 ungrounded 非常典型——查询「Toasted Almond Rice Pilaf Mix」的退货政策：</p>
+  <div class="box warn"><span class="bt">幻觉案例 kir-e-0003</span>模型回答「西班牙米饭混合物是 30 天内可退，所以它也适用同样的退货政策」。可上下文里<strong>根本没有这条政策</strong>——模型在「合理推断」，但 judge 判定为 ungrounded。这说明：<b>即便 KIR 精确检索命中，生成层照样能引入幻觉</b>，调优不能只盯着检索一条线。</div>
+  <p>这也是 evaluation-first 的价值所在：<strong>把「能答」拆成「检索对」和「答得忠实」两条独立的质量线</strong>，每一条都能单独量化、单独报告。</p>
+
+  <h2 id="s6"><span class="n">6</span>结论与下一步</h2>
+  <ul>
+    <li><span class="good">✓ 评估优先</span>：先用量化回答「检索行不行」，再谈调优——517 条评测集 + 固定 seed 完全可复现。</li>
+    <li><span class="good">✓ 分场景才有真相</span>：known-item 单源最快，跨源非 RRF 不可，「融合一定更好」是不分场景的错觉。</li>
+    <li><span class="good">✓ 归因分层</span>：区分「融合能救的排序问题」与「融合救不了的检索缺口」，优化点立刻清晰。</li>
+    <li><span class="good">✓ 忠实性独立成线</span>：检索对 ≠ 答得对，幻觉风险单独量化、单独报告。</li>
+    <li>⚠ 局限：cross/terms 相关事件本身不多（n≤6），统计上偏少，需要更大的跨源评测集来坐实结论。</li>
+  </ul>
+  <blockquote>下一步方向：按查询类型做混合路由（目录走单源快速路径、跨源走 RRF）量化端到端收益 → 源权重 / score-based 融合缓解小源偏袒再回归对比 → BM25 + vector 双信号同语料 RRF → faithfulness 接入 Langfuse 做请求级可观测，联动检索质量。</blockquote>
+
+  <div class="artnav">
+    <a href="inference-gateway.html"><div class="dir">上一篇</div><div class="nm">← 本地推理网关：给 ollama 加一层路由 + 缓存 + 校验</div></a>
+    <a href="../index.html"><div class="dir">返回</div><div class="nm">回到文章列表 →</div></a>
+  </div>
+</article>
+
+<aside class="pkcard">
+  <div class="top">
+    <span class="avatar">V</span>
+    <div>
+      <div class="nm">Vanity</div>
+      <div class="rol">RAG · Agent 工程实践者</div>
+    </div>
+  </div>
+  <p class="bio">软件工程方向，专注检索增强与大模型 Agent 的工程落地。比起"功能能跑"，更在意可靠、可复现、能现场演示。</p>
+  <h4>关注方向</h4>
+  <div class="tags"><span>RAG</span><span>Agent</span><span>LangGraph</span><span>MCP</span><span>本地大模型</span></div>
+  <h4>更多内容</h4>
+  <div class="links">
+    <a href="rrf-vs-plain-experiment.html">RRF 融合 vs 直接拼接：命中率 9/12 → 12/12</a>
+    <a href="700-lines-agent-nanoagent.html">700 行手写一个 Agent 框架</a>
+    <a href="clipmind-video-knowledge-base.html">把收藏视频变成可对话知识库</a>
+    <a href="../index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>回到文章列表</a>
+    <a href="http://github.com/Vanity-1" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.55v-2.16c-3.2.7-3.87-1.38-3.87-1.38-.52-1.33-1.28-1.68-1.28-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.03 1.75 2.69 1.25 3.34.95.1-.74.4-1.25.72-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.26.45-2.28 1.18-3.09-.12-.29-.51-1.46.11-3.04 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.74 0c2.18-1.49 3.14-1.18 3.14-1.18.63 1.58.24 2.75.12 3.04.73.81 1.17 1.83 1.17 3.09 0 4.42-2.69 5.38-5.25 5.67.41.35.77 1.05.77 2.12v3.14c0 .31.2.67.8.55A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z"/></svg>GitHub：Vanity-1</a>
+  </div>
+</aside>
+</div>
+
+<footer>本站点托管于 GitHub Pages · 二进制花园</footer>
+<button id="topBtn" aria-label="回到顶部"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg></button>
+<script src="../assets/main.js"></script>
+</body>
+</html>

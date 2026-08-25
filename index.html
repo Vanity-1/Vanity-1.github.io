@@ -42,8 +42,8 @@
     <a class="btn btn-ghost" href="#projects">看落地项目</a>
   </div>
   <div class="stats reveal">
-    <div class="chip"><div class="v grad-text"><span data-count="6">0</span></div><div class="l">技术文章</div></div>
-    <div class="chip"><div class="v grad-text"><span data-count="6">0</span></div><div class="l">落地项目</div></div>
+    <div class="chip"><div class="v grad-text"><span data-count="7">0</span></div><div class="l">技术文章</div></div>
+    <div class="chip"><div class="v grad-text"><span data-count="7">0</span></div><div class="l">落地项目</div></div>
     <div class="chip"><div class="v grad-text"><span data-count="700">0</span>*</div><div class="l">手写 Agent 核心行数</div></div>
     <div class="chip"><div class="v grad-text"><span data-count="2">0</span></div><div class="l">平台接入（视频知识库）</div></div>
   </div>
@@ -171,6 +171,24 @@
       <p class="desc">词法校验 + 参数绑定 + 强制 LIMIT + mode=ro 四层纵深防御；Token 鉴权与审计留痕，让 Agent 安全查库。</p>
       <div class="foot"><span>约 7 分钟</span><span class="ctl">阅读 <span>→</span></span></div>
     </a>
+    <a class="card reveal" href="articles/eval-first-rag.html">
+      <div class="art art-rr">
+        <svg viewBox="0 0 400 120" preserveAspectRatio="xMidYMid slice">
+          <g font-size="12" font-family="monospace" text-anchor="middle">
+            <text x="150" y="40" fill="#38e0e0">hit@5</text>
+            <text x="230" y="40" fill="#5bf0b0">recall</text>
+            <text x="190" y="62" fill="#ffcf6b">MRR</text>
+            <text x="190" y="84" fill="#7ff2ef">recall_failure ?</text>
+            <text x="190" y="102" fill="#ff8fb8">ranking_failure</text>
+          </g>
+          <path d="M120 28 H260" stroke="rgba(255,207,107,.5)" stroke-dasharray="4 4"/>
+        </svg>
+      </div>
+      <div class="tag-row"><span class="badge p">量化实验</span><span class="badge">RAG</span><span class="badge">检索评测</span></div>
+      <h3>检索评测优先的 RAG：别急着调优，先搞清检索到底行不行</h3>
+      <p class="desc">517 条固定评测集 + 多策略对比 + 失败归因 + 忠实性校验，一次运行量化"检索行不行、差在哪、融合救不回什么"。</p>
+      <div class="foot"><span>约 8 分钟</span><span class="ctl">阅读 <span>→</span></span></div>
+    </a>
   </div>
 </section>
 
@@ -215,6 +233,12 @@
       <h3>Edu DB Readonly Gateway：教育教务只读数据库网关 MCP</h3>
       <p class="desc">四层纵深防御的只读 SQL 网关：词法校验 + 参数绑定 + 强制 LIMIT + mode=ro；Token 鉴权与审计留痕。</p>
       <div class="foot"><span>官方 SDK · 26 测试 · 端到端 demo</span><span class="ctl">GitHub <span>→</span></span></div>
+    </a>
+    <a class="card reveal" href="https://github.com/Vanity-1/eval-first-rag" target="_blank" rel="noopener">
+      <div class="tag-row"><span class="badge p">检索评测</span><span class="badge">RRF</span><span class="badge">可靠性</span></div>
+      <h3>Eval-first RAG：检索评测优先的 RAG 基准</h3>
+      <p class="desc">517 条固定评测集 + 多策略对比 + 失败归因 + 忠实性校验，量化多源融合的取舍与边界；零依赖、可复现。</p>
+      <div class="foot"><span>20 文件 · 6 测试 · seed=42 可复现</span><span class="ctl">GitHub <span>→</span></span></div>
     </a>
   </div>
 </section>
@@ -297,6 +321,7 @@
     <a href="https://github.com/Vanity-1/ClipMind" target="_blank" rel="noopener">ClipMind</a>
     <a href="https://github.com/Vanity-1/inference-gateway" target="_blank" rel="noopener">推理网关</a>
     <a href="https://github.com/Vanity-1/edu-db-readonly-mcp" target="_blank" rel="noopener">只读数据库网关</a>
+    <a href="https://github.com/Vanity-1/eval-first-rag" target="_blank" rel="noopener">检索评测基准</a>
     <a href="https://github.com/Vanity-1" target="_blank" rel="noopener">GitHub 主页</a>
   </div>
 </footer>
