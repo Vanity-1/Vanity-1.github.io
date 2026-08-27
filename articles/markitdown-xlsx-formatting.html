@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>给 MarkItDown 补上 Excel 格式保留：一次 opt-in 配置的开源贡献 | 二进制花园</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<div class="bg-grid"></div><div class="bg-grain"></div>
+<div class="progress" id="progress"></div>
+
+<nav class="nav"><div class="nav-in">
+  <a class="logo" href="../index.html"><span class="mark">
+    <svg viewBox="0 0 24 24" fill="none"><path d="M4 12h4l3 5 3-10 3 5h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    <span>二进制花园</span></a>
+  <div class="nav-links"><a href="../index.html#articles">文章</a><a href="../index.html#projects">项目</a><a href="../index.html#about">关于</a></div>
+</div></nav>
+
+<div class="gutter">
+<article class="article">
+  <div class="art-crumb"><a href="../index.html">首页</a><span>/</span><span>开源贡献 · 07</span></div>
+  <h1 class="art-title">给 MarkItDown 补上 Excel 格式保留：<br>一次 <span class="grad-text">opt-in 配置</span> 的开源贡献</h1>
+  <div class="art-meta">
+    <span class="avatar">V</span>
+    <span>Vanity</span><span class="sep">·</span><span>2026-08</span><span class="sep">·</span><span>约 8 分钟</span><span class="sep">·</span><span>开源贡献 · Excel · 文档转换 · 向后兼容</span>
+  </div>
+
+  <nav class="toc">
+    <div class="t">目录</div>
+    <ul>
+      <li><a href="#s1"><span class="num">1</span>问题：Excel 转 Markdown，格式去哪了</a></li>
+      <li><a href="#s2"><span class="num">2</span>定位根因：pd.read_excel 只读值不读格式</a></li>
+      <li><a href="#s3"><span class="num">3</span>方案设计：为什么是 XlsxConfig 而不是布尔参数</a></li>
+      <li><a href="#s4"><span class="num">4</span>实现细节：货币符号动态提取 + 格式渲染</a></li>
+      <li><a href="#s5"><span class="num">5</span>验证结果：8 个测试 + 复现数据</a></li>
+      <li><a href="#s6"><span class="num">6</span>结论与下一步</a></li>
+    </ul>
+  </nav>
+
+  <div class="box info"><span class="bt">一句话结论</span>给微软 MarkItDown（60k+ star 文档转换工具）修了一个真实 issue（#53）：Excel 里显示 <code>$1,199.00</code> 的单元格，转成 Markdown 后只剩 <code>1199</code>。根因是 <code>pd.read_excel</code> 只读单元格值、不读格式元数据。我按维护者要求的 <strong>config 对象模式</strong> 设计了 opt-in 的 <code>XlsxConfig(preserve_formatting=True)</code>，动态提取货币符号并渲染货币/百分比/千分位/日期格式，默认行为完全向后兼容。PR 见 <a href="https://github.com/microsoft/markitdown/pull/2347" target="_blank" rel="noopener">microsoft/markitdown#2347</a>。</div>
+
+  <h2 id="s1"><span class="n">1</span>问题：Excel 转 Markdown，格式去哪了</h2>
+  <p>MarkItDown 是微软开源的「万物转 Markdown」工具，Excel、Word、PDF、图片都能转。用它把一份带格式的 Excel 转成 Markdown 做知识库入库，是很常见的用法。但很快会发现一个诡异的现象：</p>
+  <div class="tbl"><table>
+    <tr><th>Excel 里显示</th><th>转出来的 Markdown</th><th>丢了什么</th></tr>
+    <tr><td><code>$1,199.00</code></td><td><code>1199</code></td><td class="bad">货币符号、千分位、小数位</td></tr>
+    <tr><td><code>25.5%</code></td><td><code>0.255</code></td><td class="bad">百分比语义</td></tr>
+    <tr><td><code>2024-01-15</code></td><td><code>45241</code></td><td class="bad">日期格式（Excel 序列号）</td></tr>
+    <tr><td><code>€9.50</code></td><td><code>9.5</code></td><td class="bad">币种</td></tr>
+  </table></div>
+  <p>对「人读」来说，<code>1199</code> 和 <code>$1,199.00</code> 差的不只是符号——货币、百分比、日期这些语义信息全丢了。对 RAG 检索来说，<code>0.255</code> 和 <code>25.5%</code> 检索语义完全不同。这就是 issue #53 报告的问题。</p>
+
+  <h2 id="s2"><span class="n">2</span>定位根因：pd.read_excel 只读值不读格式</h2>
+  <p>MarkItDown 的 XLSX 转换走的是 pandas：<code>pd.read_excel()</code> 读 DataFrame，再逐行转 Markdown。问题就出在这一层——<strong>pandas 只读单元格的原始值，不读格式元数据</strong>。</p>
+  <p>Excel 文件里每个单元格其实有两层信息：<code>value</code>（存储值，比如 <code>1199</code>）和 <code>number_format</code>（显示格式，比如 <code>"$"#,##0.00</code>）。Excel 界面显示的是「存储值套上格式」的结果。pandas 只取前者，格式串在转换途中被丢弃。</p>
+  <div class="box warn"><span class="bt">复现脚本</span>写一个 <code>repro_53.py</code>：用 openpyxl 造一个带 <code>"$"#,##0.00</code> 格式的单元格，再走 MarkItDown 转换，输出确实是 <code>1199</code>。再用 openpyxl 直接读同一个文件，<code>cell.number_format</code> 能拿到 <code>"$"#,##0.00</code>——<strong>格式元数据一直在文件里，只是转换链路没读它</strong>。根因清楚了。</div>
+  <p>修法方向也清楚了：转换时用 openpyxl 读取 <code>number_format</code>，把「存储值」渲染成「显示值」。但这里有个关键约束——<strong>不能破坏默认行为</strong>。</p>
+
+  <h2 id="s3"><span class="n">3</span>方案设计：为什么是 XlsxConfig 而不是布尔参数</h2>
+  <p>最直觉的做法是给 <code>XlsxConverter</code> 加一个 <code>preserve_formatting: bool = False</code> 参数。但 MarkItDown 维护者在既有 PR #1325 的评审里明确要求过：<strong>用 config 对象，不要用布尔参数</strong>。原因很实际：</p>
+  <ul>
+    <li><b>可扩展</b>：未来要加「日期格式」「千分位开关」等选项，config 对象直接加字段，布尔参数会让构造函数参数无限膨胀。</li>
+    <li><b>IDE 友好</b>：<code>XlsxConfig(preserve_formatting=True)</code> 有自动补全和类型提示，裸布尔参数没有。</li>
+    <li><b>模式统一</b>：后续 PdfConfig、DocxConfig 都按同一模式走，整个库的配置风格一致。</li>
+  </ul>
+  <pre><code>@dataclass
+class XlsxConfig:
+    """Configuration options for :class:`XlsxConverter`."""
+    preserve_formatting: bool = False  # 默认关闭，保持向后兼容
+
+class XlsxConverter(DocumentConverter):
+    def __init__(self, config: Optional[XlsxConfig] = None):
+        super().__init__()
+        self._config = config or XlsxConfig()
+
+    def convert(self, file_stream, stream_info, **kwargs):
+        if self._config.preserve_formatting:
+            return self._convert_with_formatting(file_stream, **kwargs)
+        # 默认走原 pandas 路径，输出与旧版完全一致</code></pre>
+  <p>关键决策是 <strong>默认关闭</strong>。为什么？开启后输出会带 <code>$</code>、<code>,</code>、<code>%</code> 等字符，下游如果写 <code>float(cell_value)</code> 解析会直接崩。默认关闭保证既有用户零感知，只有显式开启才走新的格式化路径——这是「向后兼容」的工程底线。</p>
+
+  <h2 id="s4"><span class="n">4</span>实现细节：货币符号动态提取 + 格式渲染</h2>
+  <p>真正花功夫的是把 <code>number_format</code> 字符串翻译成可读文本。Excel 的格式串是它自己的 DSL，比如 <code>"$"#,##0.00</code>、<code>0.00%</code>、<code>[$€-407]#,##0.00</code>。我实现了一个轻量解析器，处理四类格式：</p>
+  <div class="tbl"><table>
+    <tr><th>格式类型</th><th>格式串示例</th><th>渲染结果</th></tr>
+    <tr><td>货币</td><td><code>"$"#,##0.00</code> / <code>[$€-407]#,##0.00</code></td><td><code>$1,199.00</code> / <code>€1,199.00</code></td></tr>
+    <tr><td>百分比</td><td><code>0.00%</code></td><td><code>25.50%</code></td></tr>
+    <tr><td>千分位</td><td><code>#,##0</code></td><td><code>1,234</code></td></tr>
+    <tr><td>日期</td><td><code>yyyy-mm-dd</code></td><td><code>2024-01-15</code></td></tr>
+  </table></div>
+  <p>两个容易踩的细节：</p>
+  <ul>
+    <li><b>货币符号不能硬编码</b>：从格式串里正则提取引号字面量（<code>"$"</code>、<code>"€"</code>）和 <code>[$USD]</code> 货币代码，动态识别符号。这样美元、欧元、人民币都能正确输出，而不是写死一个 <code>$</code>。</li>
+    <li><b>负数会计格式</b>：格式串含括号（会计格式）时输出 <code>($1,234.50)</code>，标准格式输出 <code>-$1,234.50</code>。符号位置也要自适应：<code>"$"#,##0.00</code> 符号前置，<code>#,##0.00"€"</code> 符号后置。</li>
+  </ul>
+  <div class="box ok"><span class="bt">使用方式</span>启用只需一行：<code>MarkItDown(xlsx_config=XlsxConfig(preserve_formatting=True))</code>。<code>XlsxConfig</code> 已从 <code>markitdown</code> 包顶层导出，IDE 自动补全友好。</div>
+
+  <h2 id="s5"><span class="n">5</span>验证结果：8 个测试 + 复现数据</h2>
+  <p>贡献的工程底线是「有测试、无回归」。我新增了 8 个测试用例，覆盖：</p>
+  <ul>
+    <li><b>向后兼容</b>：默认不开启时输出与旧版逐字节一致</li>
+    <li><b>货币</b>：美元 <code>$5.00</code>、<code>$1,199.00</code>、欧元 <code>€9.50</code></li>
+    <li><b>百分比</b>：<code>25.5%</code></li>
+    <li><b>千分位</b>：<code>1,234</code></li>
+    <li><b>负数</b>：标准 <code>-$1,234.50</code> 与会计 <code>($1,234.50)</code></li>
+    <li><b>日期</b>：<code>2024-01-15</code></li>
+    <li><b>配置导出</b>：<code>XlsxConfig</code> 可从包顶层导入</li>
+  </ul>
+  <div class="kpis">
+    <div class="kpi"><div class="v"><span data-count="8">0</span></div><div class="l">新增测试</div></div>
+    <div class="kpi"><div class="v"><span data-count="100">0</span>%</div><div class="l">测试通过</div></div>
+    <div class="kpi"><div class="v"><span data-count="0">0</span></div><div class="l">回归用例</div></div>
+    <div class="kpi"><div class="v"><span data-count="294">0</span></div><div class="l">新增代码行</div></div>
+  </div>
+  <p class="faint">既有 xlsx / xls 测试向量全部通过，无回归。复现脚本验证 <code>$5.00</code>、<code>$1,199.00</code>、<code>25.5%</code>、<code>1,234</code>、<code>€9.50</code>、<code>2024-01-15</code> 全部正确输出。</p>
+
+  <h2 id="s6"><span class="n">6</span>结论与下一步</h2>
+  <ul>
+    <li><span class="good">✓ 从现象到根因</span>：pandas 只读值不读格式元数据，格式串一直在文件里，是转换链路没读它。</li>
+    <li><span class="good">✓ 遵循维护者模式</span>：用 config 对象而非布尔参数，可扩展、IDE 友好、风格统一。</li>
+    <li><span class="good">✓ 向后兼容</span>：默认关闭，既有用户零感知；显式开启才走格式化路径。</li>
+    <li><span class="good">✓ 有测试无回归</span>：8 个新测试 + 既有测试向量全通过。</li>
+  </ul>
+  <blockquote>这次贡献最有价值的不是那 294 行代码，而是「怎么在不破坏别人的前提下加功能」——opt-in 配置、默认向后兼容、测试锁回归，这套工程习惯在任何项目里都通用。下一步方向：把格式解析扩展到 Word 表格、支持更多 Excel 格式串（科学计数、文本前缀），以及把格式化路径的覆盖测试补到 20+。</blockquote>
+
+  <div class="artnav">
+    <a href="litellm-multi-objective-routing.html"><div class="dir">下一篇</div><div class="nm">给 LiteLLM 加一个多目标路由策略 →</div></a>
+    <a href="../index.html"><div class="dir">返回</div><div class="nm">回到文章列表 →</div></a>
+  </div>
+</article>
+
+<aside class="pkcard">
+  <div class="top">
+    <span class="avatar">V</span>
+    <div>
+      <div class="nm">Vanity</div>
+      <div class="rol">RAG · Agent 工程实践者</div>
+    </div>
+  </div>
+  <p class="bio">软件工程方向，专注检索增强与大模型 Agent 的工程落地。比起"功能能跑"，更在意可靠、可复现、能现场演示。</p>
+  <h4>关注方向</h4>
+  <div class="tags"><span>RAG</span><span>Agent</span><span>LangGraph</span><span>MCP</span><span>本地大模型</span></div>
+  <h4>更多内容</h4>
+  <div class="links">
+    <a href="litellm-multi-objective-routing.html">给 LiteLLM 加一个多目标路由策略</a>
+    <a href="rrf-vs-plain-experiment.html">RRF 融合 vs 直接拼接：命中率 9/12 → 12/12</a>
+    <a href="inference-gateway.html">本地推理网关：路由 + 缓存 + 校验</a>
+    <a href="../index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>回到文章列表</a>
+    <a href="http://github.com/Vanity-1" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.55v-2.16c-3.2.7-3.87-1.38-3.87-1.38-.52-1.33-1.28-1.68-1.28-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.03 1.75 2.69 1.25 3.34.95.1-.74.4-1.25.72-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.26.45-2.28 1.18-3.09-.12-.29-.51-1.46.11-3.04 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.74 0c2.18-1.49 3.14-1.18 3.14-1.18.63 1.58.24 2.75.12 3.04.73.81 1.17 1.83 1.17 3.09 0 4.42-2.69 5.38-5.25 5.67.41.35.77 1.05.77 2.12v3.14c0 .31.2.67.8.55A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z"/></svg>GitHub：Vanity-1</a>
+  </div>
+</aside>
+</div>
+
+<footer>本站点托管于 GitHub Pages · 二进制花园</footer>
+<button id="topBtn" aria-label="回到顶部"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg></button>
+<script src="../assets/main.js"></script>
+</body>
+</html>

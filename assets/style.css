@@ -144,6 +144,10 @@ section{max-width:var(--maxw);margin:0 auto;padding:44px 24px}
 .art-cm svg{position:absolute;inset:0;width:100%;height:100%}
 .art-lock{background:linear-gradient(135deg,#122b33 0%,#1d2342 55%,#261a34 100%)}
 .art-lock svg{position:absolute;inset:0;width:100%;height:100%}
+.art-md{background:linear-gradient(135deg,#173a31 0%,#122b33 55%,#1c1836 100%)}
+.art-md svg{position:absolute;inset:0;width:100%;height:100%}
+.art-ll{background:linear-gradient(135deg,#1d2342 0%,#261a34 55%,#12303a 100%)}
+.art-ll svg{position:absolute;inset:0;width:100%;height:100%}
 
 /* 技能栈徽章墙 */
 .skills{display:flex;flex-wrap:wrap;gap:10px}

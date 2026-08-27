@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>给 LiteLLM 加一个多目标路由策略：四维加权评分怎么设计 | 二进制花园</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<div class="bg-grid"></div><div class="bg-grain"></div>
+<div class="progress" id="progress"></div>
+
+<nav class="nav"><div class="nav-in">
+  <a class="logo" href="../index.html"><span class="mark">
+    <svg viewBox="0 0 24 24" fill="none"><path d="M4 12h4l3 5 3-10 3 5h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    <span>二进制花园</span></a>
+  <div class="nav-links"><a href="../index.html#articles">文章</a><a href="../index.html#projects">项目</a><a href="../index.html#about">关于</a></div>
+</div></nav>
+
+<div class="gutter">
+<article class="article">
+  <div class="art-crumb"><a href="../index.html">首页</a><span>/</span><span>开源贡献 · 08</span></div>
+  <h1 class="art-title">给 LiteLLM 加一个多目标路由策略：<br><span class="grad-text">四维加权评分</span> 怎么设计</h1>
+  <div class="art-meta">
+    <span class="avatar">V</span>
+    <span>Vanity</span><span class="sep">·</span><span>2026-08</span><span class="sep">·</span><span>约 9 分钟</span><span class="sep">·</span><span>开源贡献 · LLM 网关 · 路由策略 · 归一化</span>
+  </div>
+
+  <nav class="toc">
+    <div class="t">目录</div>
+    <ul>
+      <li><a href="#s1"><span class="num">1</span>为什么需要多目标路由</a></li>
+      <li><a href="#s2"><span class="num">2</span>核心设计：四维加权评分公式</a></li>
+      <li><a href="#s3"><span class="num">3</span>关键实现：指标采集、归一化、冷启动</a></li>
+      <li><a href="#s4"><span class="num">4</span>扩展点接入：与官方策略同构</a></li>
+      <li><a href="#s5"><span class="num">5</span>验证结果：18 个测试</a></li>
+      <li><a href="#s6"><span class="num">6</span>结论与下一步</a></li>
+    </ul>
+  </nav>
+
+  <div class="box info"><span class="bt">一句话结论</span>LiteLLM（30k+ star 的 LLM 网关）官方路由策略都是<strong>单一目标</strong>：最低延迟、最低成本、最少负载。但生产里成本、延迟、稳定性往往互相冲突。我在 fork 里实现了<strong>多目标加权评分</strong>策略：延迟、成本、成功率、吞吐量四维指标，Min-Max 归一化后按可配置权重加权，让运维用权重表达业务偏好。18 个单测全过，代码在 <a href="https://github.com/Vanity-1/litellm" target="_blank" rel="noopener">github.com/Vanity-1/litellm</a>（分支 <code>feat/multi-objective-routing</code>）。</div>
+
+  <h2 id="s1"><span class="n">1</span>为什么需要多目标路由</h2>
+  <p>LiteLLM 是生产级 LLM 网关，统一 100+ 模型的接口。它内置了多种路由策略，但都是单一目标：</p>
+  <div class="tbl"><table>
+    <tr><th>策略</th><th>优化目标</th><th>局限</th></tr>
+    <tr><td><code>lowest-latency</code></td><td>延迟最低</td><td>可能一直选最贵的模型</td></tr>
+    <tr><td><code>lowest-cost</code></td><td>成本最低</td><td>可能一直选最慢的模型</td></tr>
+    <tr><td><code>least-busy</code></td><td>负载最少</td><td>忽略成本与质量</td></tr>
+  </table></div>
+  <p>真实业务里这些目标经常<strong>互相冲突</strong>：要便宜就不能要最快，要稳定就得牺牲一点成本。单一目标无法表达「我 60% 在乎成本、30% 在乎延迟、10% 在乎稳定」这种权衡。多目标加权评分就是把这种业务偏好变成可配置的权重。</p>
+  <div class="box warn"><span class="bt">一个典型场景</span>批量离线任务：延迟无所谓，成本敏感 → 权重偏向 cost。线上对话：延迟敏感，成本次要 → 权重偏向 latency。同一套网关，不同任务配不同权重，而不是为每个场景写死一套策略。</div>
+
+  <h2 id="s2"><span class="n">2</span>核心设计：四维加权评分公式</h2>
+  <p>评分公式很直观，难点在「怎么让不同量纲的指标可比」：</p>
+  <pre><code>Score = w_latency × latency_score
+      + w_cost × cost_score
+      + w_success × success_score
+      + w_throughput × throughput_score</code></pre>
+  <p>四个指标量纲完全不同：延迟是毫秒级、成本是美元级、成功率是 0~1、吞吐是 TPM/RPM。直接加权没有意义，必须<strong>先归一化再加权</strong>。我用 Min-Max 归一化把每个指标压到 [0,1]：</p>
+  <ul>
+    <li><b>延迟 / 成本</b>：越低越好，归一化后取反（<code>1 - normalized</code>），分数越高越优。</li>
+    <li><b>成功率 / 吞吐</b>：越高越好，直接归一化。</li>
+    <li><b>权重自动归一化</b>：四个权重总和自动归一为 1，全零权重回退默认值，避免配置失误。</li>
+  </ul>
+  <div class="box ok"><span class="bt">为什么用 Min-Max 而不是 Z-Score</span>指标量纲差异大（延迟毫秒级、成本美元级），Min-Max 能统一到 [0,1] 且保留相对排序；Z-Score 需要假设正态分布，对「延迟」这种长尾分布不合适。</div>
+
+  <h2 id="s3"><span class="n">3</span>关键实现：指标采集、归一化、冷启动</h2>
+  <p>评分需要实时指标，指标从哪来？LiteLLM 的 <code>CustomLogger</code> 钩子会在每次请求成功/失败后异步回调。我通过它采集每个部署的延迟、TPM/RPM 吞吐、成功/失败次数，写入 router 缓存，评分时读取。</p>
+  <p>三个工程细节决定策略能不能在真实环境用：</p>
+  <ul>
+    <li><b>冷启动</b>：新部署没有历史数据，如果直接跳过，它永远没机会被选中、也就永远没有数据——死循环。处理：无历史数据的部署成功率默认 1.0（已通过健康检查），延迟/吞吐用 0 参与归一化，保证新部署有机会被选中。</li>
+    <li><b>TPM/RPM 限额约束</b>：评分前先过滤超出限额的部署，防止把流量打到快超限的模型上。</li>
+    <li><b>随机打破平局</b>：同分部署随机选择，避免某个部署因排序稳定被长期选中、其他部署空转。</li>
+  </ul>
+  <div class="viz reveal">
+    <h4>评分流程</h4>
+    <div class="bar-row"><span class="lab">1. 过滤</span><div class="bar-track"><div class="bar plain" data-bar="100%"></div></div><span class="bar-val">排除超限 / 不健康</span></div>
+    <div class="bar-row"><span class="lab">2. 归一化</span><div class="bar-track"><div class="bar rrf" data-bar="100%"></div></div><span class="bar-val">四维 → [0,1]</span></div>
+    <div class="bar-row"><span class="lab">3. 加权</span><div class="bar-track"><div class="bar plain" data-bar="100%"></div></div><span class="bar-val">按权重求和</span></div>
+    <div class="bar-row"><span class="lab">4. 选择</span><div class="bar-track"><div class="bar rrf" data-bar="100%"></div></div><span class="bar-val">最高分，同分随机</span></div>
+  </div>
+
+  <h2 id="s4"><span class="n">4</span>扩展点接入：与官方策略同构</h2>
+  <p>LiteLLM 提供了 <code>CustomRoutingStrategyBase</code> 扩展点，官方 LAR-1 策略也基于它。我的实现完全走这个扩展点，不碰路由主流程：</p>
+  <ul>
+    <li>权重通过 <code>routing_strategy_args</code> 配置：<code>weight_latency</code> / <code>weight_cost</code> / <code>weight_success_rate</code> / <code>weight_throughput</code>。</li>
+    <li>成本计算通过 <code>litellm.get_model_info</code> 解析，兼容 <code>openai/</code> 前缀模型名。</li>
+    <li><b>异步优先</b>：指标采集依赖异步回调，同步接口显式抛 <code>NotImplementedError</code>，引导用户启用 async 模式——否则策略拿不到实时指标，评分就是空转。</li>
+  </ul>
+  <div class="box info"><span class="bt">为什么只支持异步</span>指标采集依赖 CustomLogger 的异步回调，同步路由无法获取实时指标。与其让同步模式「假装能用」，不如显式报错，把用户引导到正确的 async 模式——这是设计上主动做的取舍。</div>
+
+  <h2 id="s5"><span class="n">5</span>验证结果：18 个测试</h2>
+  <p>路由策略是网关核心路径，必须用测试锁住行为。我写了 18 个单测，覆盖：</p>
+  <ul>
+    <li><b>权重归一化</b>：任意权重组合自动归一为 1，全零回退默认</li>
+    <li><b>纯成本路由</b>：正确选择免费本地模型；云端模型对比中正确选择更便宜的 gpt-4o-mini</li>
+    <li><b>纯延迟 / 纯成功率 / 纯吞吐路由</b>：单目标退化为官方策略行为</li>
+    <li><b>限额过滤</b>：超 TPM/RPM 的部署被排除</li>
+    <li><b>冷启动</b>：无历史数据的部署仍参与评分</li>
+    <li><b>平局随机</b>：同分部署随机选择，不长期锁定单点</li>
+  </ul>
+  <div class="kpis">
+    <div class="kpi"><div class="v"><span data-count="18">0</span></div><div class="l">单元测试</div></div>
+    <div class="kpi"><div class="v"><span data-count="100">0</span>%</div><div class="l">测试通过</div></div>
+    <div class="kpi"><div class="v"><span data-count="451">0</span></div><div class="l">策略模块行数</div></div>
+    <div class="kpi"><div class="v"><span data-count="4">0</span></div><div class="l">评分维度</div></div>
+  </div>
+  <p class="faint">测试验证了纯成本路由在「免费本地模型 vs 付费云端模型」对比中正确选择免费模型，在云端模型间正确选择更便宜的 gpt-4o-mini——说明成本解析和归一化逻辑是真实生效的，不是纸面设计。</p>
+
+  <h2 id="s6"><span class="n">6</span>结论与下一步</h2>
+  <ul>
+    <li><span class="good">✓ 突破单一目标限制</span>：四维加权让业务偏好可配置，一套网关适配多种任务。</li>
+    <li><span class="good">✓ 工程细节完整</span>：冷启动、限额过滤、平局随机、权重归一化，都是真实环境会踩的坑。</li>
+    <li><span class="good">✓ 走官方扩展点</span>：与 LAR-1 同构，不碰路由主流程，可维护、可评审。</li>
+    <li><span class="good">✓ 测试锁行为</span>：18 个单测覆盖主要分支，单目标退化为官方行为。</li>
+  </ul>
+  <blockquote>这次 fork 的收获是「怎么给一个成熟项目加能力而不破坏它」：找对扩展点、尊重既有模式、把边界情况（冷启动、限额、平局）都想到。下一步方向：接入真实多模型网关跑一轮线上对比数据、把指标采集改成滑动窗口（而不是累计）、支持按请求动态传权重。</blockquote>
+
+  <div class="artnav">
+    <a href="markitdown-xlsx-formatting.html"><div class="dir">上一篇</div><div class="nm">← 给 MarkItDown 补上 Excel 格式保留</div></a>
+    <a href="../index.html"><div class="dir">返回</div><div class="nm">回到文章列表 →</div></a>
+  </div>
+</article>
+
+<aside class="pkcard">
+  <div class="top">
+    <span class="avatar">V</span>
+    <div>
+      <div class="nm">Vanity</div>
+      <div class="rol">RAG · Agent 工程实践者</div>
+    </div>
+  </div>
+  <p class="bio">软件工程方向，专注检索增强与大模型 Agent 的工程落地。比起"功能能跑"，更在意可靠、可复现、能现场演示。</p>
+  <h4>关注方向</h4>
+  <div class="tags"><span>RAG</span><span>Agent</span><span>LangGraph</span><span>MCP</span><span>本地大模型</span></div>
+  <h4>更多内容</h4>
+  <div class="links">
+    <a href="markitdown-xlsx-formatting.html">给 MarkItDown 补上 Excel 格式保留</a>
+    <a href="rrf-vs-plain-experiment.html">RRF 融合 vs 直接拼接：命中率 9/12 → 12/12</a>
+    <a href="inference-gateway.html">本地推理网关：路由 + 缓存 + 校验</a>
+    <a href="../index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>回到文章列表</a>
+    <a href="http://github.com/Vanity-1" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.55v-2.16c-3.2.7-3.87-1.38-3.87-1.38-.52-1.33-1.28-1.68-1.28-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.03 1.75 2.69 1.25 3.34.95.1-.74.4-1.25.72-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.26.45-2.28 1.18-3.09-.12-.29-.51-1.46.11-3.04 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.74 0c2.18-1.49 3.14-1.18 3.14-1.18.63 1.58.24 2.75.12 3.04.73.81 1.17 1.83 1.17 3.09 0 4.42-2.69 5.38-5.25 5.67.41.35.77 1.05.77 2.12v3.14c0 .31.2.67.8.55A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z"/></svg>GitHub：Vanity-1</a>
+  </div>
+</aside>
+</div>
+
+<footer>本站点托管于 GitHub Pages · 二进制花园</footer>
+<button id="topBtn" aria-label="回到顶部"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg></button>
+<script src="../assets/main.js"></script>
+</body>
+</html>

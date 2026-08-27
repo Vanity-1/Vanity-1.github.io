@@ -42,8 +42,8 @@
     <a class="btn btn-ghost" href="#projects">看落地项目</a>
   </div>
   <div class="stats reveal">
-    <div class="chip"><div class="v grad-text"><span data-count="7">0</span></div><div class="l">技术文章</div></div>
-    <div class="chip"><div class="v grad-text"><span data-count="7">0</span></div><div class="l">落地项目</div></div>
+    <div class="chip"><div class="v grad-text"><span data-count="9">0</span></div><div class="l">技术文章</div></div>
+    <div class="chip"><div class="v grad-text"><span data-count="9">0</span></div><div class="l">落地项目</div></div>
     <div class="chip"><div class="v grad-text"><span data-count="700">0</span>*</div><div class="l">手写 Agent 核心行数</div></div>
     <div class="chip"><div class="v grad-text"><span data-count="2">0</span></div><div class="l">平台接入（视频知识库）</div></div>
   </div>
@@ -181,6 +181,40 @@
       <p class="desc">517 条固定评测集 + 多策略对比 + 失败归因 + 忠实性校验，一次运行量化"检索行不行、差在哪、融合救不回什么"。</p>
       <div class="foot"><span>约 8 分钟</span><span class="ctl">阅读 <span>→</span></span></div>
     </a>
+    <a class="card reveal" href="articles/markitdown-xlsx-formatting.html">
+      <div class="art art-md">
+        <svg viewBox="0 0 400 120" preserveAspectRatio="xMidYMid slice">
+          <g font-size="12" font-family="monospace" text-anchor="middle">
+            <text x="200" y="34" fill="#38e0e0">$1,199.00</text>
+            <text x="200" y="56" fill="#ffcf6b">25.5%</text>
+            <text x="200" y="78" fill="#5bf0b0">2024-01-15</text>
+            <text x="200" y="100" fill="#ff8fb8">€9.50</text>
+          </g>
+          <path d="M120 24 H280" stroke="rgba(56,224,224,.5)" stroke-dasharray="4 4"/>
+        </svg>
+      </div>
+      <div class="tag-row"><span class="badge b">开源贡献</span><span class="badge">Excel</span><span class="badge">文档转换</span></div>
+      <h3>给 MarkItDown 补上 Excel 格式保留：一次 opt-in 配置的开源贡献</h3>
+      <p class="desc">$1,199.00 转出来只剩 1199？根因是 pandas 只读值不读格式。用 XlsxConfig 动态提取货币符号，默认行为完全向后兼容。</p>
+      <div class="foot"><span>约 8 分钟</span><span class="ctl">阅读 <span>→</span></span></div>
+    </a>
+    <a class="card reveal" href="articles/litellm-multi-objective-routing.html">
+      <div class="art art-ll">
+        <svg viewBox="0 0 400 120" preserveAspectRatio="xMidYMid slice">
+          <g fill="none" stroke-linecap="round">
+            <path d="M40 60 H360" stroke="rgba(56,224,224,.5)" stroke-dasharray="4 4"/>
+            <path d="M120 60 L120 30 L200 30 L200 90 L280 90 L280 60" stroke="rgba(155,140,255,.55)" stroke-width="1.5"/>
+          </g>
+          <g fill="#38e0e0"><circle cx="40" cy="60" r="4"/><circle cx="360" cy="60" r="4"/></g>
+          <g fill="#ffcf6b"><circle cx="120" cy="30" r="3.5"/><circle cx="200" cy="90" r="3.5"/><circle cx="280" cy="60" r="3.5"/></g>
+          <text x="200" y="112" font-size="12" font-family="monospace" text-anchor="middle" fill="#7ff2ef">w_latency · w_cost · w_success · w_throughput</text>
+        </svg>
+      </div>
+      <div class="tag-row"><span class="badge b">开源贡献</span><span class="badge">LLM 网关</span><span class="badge">路由策略</span></div>
+      <h3>给 LiteLLM 加一个多目标路由策略：四维加权评分怎么设计</h3>
+      <p class="desc">官方策略都是单一目标。用延迟、成本、成功率、吞吐量四维加权评分，Min-Max 归一化 + 冷启动 + 限额过滤，18 个单测锁行为。</p>
+      <div class="foot"><span>约 9 分钟</span><span class="ctl">阅读 <span>→</span></span></div>
+    </a>
   </div>
 </section>
 
@@ -231,6 +265,18 @@
       <h3>Eval-first RAG：检索评测优先的 RAG 基准</h3>
       <p class="desc">517 条固定评测集 + 多策略对比 + 失败归因 + 忠实性校验，量化多源融合的取舍与边界；零依赖、可复现。</p>
       <div class="foot"><span>20 文件 · 6 测试 · seed=42 可复现</span><span class="ctl">GitHub <span>→</span></span></div>
+    </a>
+    <a class="card reveal" href="https://github.com/Vanity-1/markitdown" target="_blank" rel="noopener">
+      <div class="tag-row"><span class="badge b">开源贡献</span><span class="badge">MarkItDown</span><span class="badge">Excel</span></div>
+      <h3>MarkItDown Excel 格式保留（上游 PR #2347）</h3>
+      <p class="desc">为微软 MarkItDown（60k+ star）修复 Excel 货币格式丢失（issue #53）。opt-in 的 XlsxConfig 动态提取货币符号，默认向后兼容，8 测试无回归。</p>
+      <div class="foot"><span>PR #2347 · 8 测试 · 已签 CLA</span><span class="ctl">GitHub <span>→</span></span></div>
+    </a>
+    <a class="card reveal" href="https://github.com/Vanity-1/litellm" target="_blank" rel="noopener">
+      <div class="tag-row"><span class="badge b">开源 Fork</span><span class="badge">LiteLLM</span><span class="badge">路由策略</span></div>
+      <h3>LiteLLM 多目标路由策略（Fork）</h3>
+      <p class="desc">为 LiteLLM（30k+ star LLM 网关）扩展四维加权评分路由：延迟/成本/成功率/吞吐量，Min-Max 归一化 + 冷启动 + 限额过滤，18 单测全过。</p>
+      <div class="foot"><span>451 行策略 · 18 测试 · 分支 feat/multi-objective-routing</span><span class="ctl">GitHub <span>→</span></span></div>
     </a>
   </div>
 </section>
@@ -316,6 +362,8 @@
     <a href="https://github.com/Vanity-1/inference-gateway" target="_blank" rel="noopener">推理网关</a>
     <a href="https://github.com/Vanity-1/edu-db-readonly-mcp" target="_blank" rel="noopener">只读数据库网关</a>
     <a href="https://github.com/Vanity-1/eval-first-rag" target="_blank" rel="noopener">检索评测基准</a>
+    <a href="https://github.com/Vanity-1/markitdown" target="_blank" rel="noopener">MarkItDown 贡献</a>
+    <a href="https://github.com/Vanity-1/litellm" target="_blank" rel="noopener">LiteLLM 路由 Fork</a>
     <a href="https://github.com/Vanity-1" target="_blank" rel="noopener">GitHub 主页</a>
   </div>
 </footer>
