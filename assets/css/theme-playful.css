@@ -8,7 +8,7 @@
   --bg-card: #FFFFFF; --line: #F2E3D5;
   --text: #3D2C29; --text-dim: #7A6458;
   --accent: #FF5C8A; --accent-2: #A288F5; --accent-contrast: #4A1226;
-  --tag-bg: #FFF0E6; --code-bg: #2D2A32; --code-inline-bg: #FDE8DC;
+  --tag-bg: #FFF0E6; --code-bg: #2D2A32; --code-text: #F5F0E8; --code-inline-bg: #FDE8DC;
   --radius: 20px;
   --glow: 0 14px 34px rgba(255, 92, 138, .22);
   --font-display: 'Baloo 2', 'Comic Sans MS', system-ui, sans-serif;

@@ -7,7 +7,7 @@
   --bg-card: #17171A; --line: #26262B;
   --text: #F5F5F0; --text-dim: #8B8B85;
   --accent: #C9A86A; --accent-2: #E8D5AE; --accent-contrast: #171204;
-  --tag-bg: rgba(201, 168, 106, .08); --code-bg: #0C0C0E; --code-inline-bg: #212125;
+  --tag-bg: rgba(201, 168, 106, .08); --code-bg: #0C0C0E; --code-text: #F5F5F0; --code-inline-bg: #212125;
   --radius: 6px;
   --glow: 0 10px 30px rgba(0, 0, 0, .5);
   --font-display: Georgia, 'Times New Roman', serif;
