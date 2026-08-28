@@ -1,0 +1,30 @@
+/* 风格 A：奇趣互动派（亮色默认）
+ * 融合版：所有特效常驻，本文件只提供配色变量与风格装饰；
+ * 彩带配色由 fx-core.js 的 CONFETTI_COLORS.playful 提供，
+ * 卡片弹性回弹/歪斜由基础弹性过渡 + FX.tilt 的 playful 歪斜角共同实现 */
+[data-theme='playful'] {
+  color-scheme: light;
+  --bg: #FFF7EE; --bg-header: rgba(255, 247, 238, .82);
+  --bg-card: #FFFFFF; --line: #F2E3D5;
+  --text: #3D2C29; --text-dim: #7A6458;
+  --accent: #FF5C8A; --accent-2: #A288F5; --accent-contrast: #4A1226;
+  --tag-bg: #FFF0E6; --code-bg: #2D2A32; --code-inline-bg: #FDE8DC;
+  --radius: 20px;
+  --glow: 0 14px 34px rgba(255, 92, 138, .22);
+  --font-display: 'Baloo 2', 'Comic Sans MS', system-ui, sans-serif;
+  --font-body: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'Cascadia Code', Consolas, monospace;
+}
+[data-theme='playful'] .card { border-width: 2px; }
+[data-theme='playful'] .card:hover { transform: translateY(-6px) rotate(-1deg); }
+[data-theme='playful'] .logo { color: var(--accent); }
+/* 糖果条纹进度条（区别于 cyber 霓虹渐变 / editorial 金色细线） */
+[data-theme='playful'] #progress {
+  height: 8px; border-radius: 0 999px 999px 0;
+  background: repeating-linear-gradient(45deg, var(--accent) 0 10px, var(--accent-2) 10px 20px);
+  background-size: 28px 100%;
+  animation: candy-stripes 1s linear infinite;
+}
+@keyframes candy-stripes { to { background-position: 28px 0; } }
+[data-theme='playful'] a { color: #D6336C; }
+[data-theme='playful'] .tag { color: #D6336C; }

@@ -1,404 +1,99 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="playful">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="二进制花园 —— 个人技术博客，记录软件工程与 AI 应用方向的实践、踩坑与思考">
-<title>二进制花园 · 个人技术博客</title>
-<link rel="stylesheet" href="assets/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Code &amp; Craft —— 个人技术博客，记录 RAG / Agent 工程实践与前端创意编码，三主题切换、特效共存的纯前端单页。">
+  <title>Code &amp; Craft · 个人技术博客</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@400;700&family=JetBrains+Mono:wght@500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@400;700&family=JetBrains+Mono:wght@500;700&family=Inter:wght@400;600&display=swap"></noscript>
+  <link rel="stylesheet" href="assets/css/base.css">
+  <link rel="stylesheet" href="assets/css/theme-playful.css">
+  <link rel="stylesheet" href="assets/css/theme-cyber.css">
+  <link rel="stylesheet" href="assets/css/theme-editorial.css">
+  <script src="assets/js/theme-switch.js"></script>
 </head>
 <body>
-<div class="bg-grid"></div><div class="bg-grain"></div>
-<div class="progress" id="progress"></div>
+  <div id="progress"></div>
 
-<!-- 导航 -->
-<nav class="nav">
-  <div class="nav-in">
-    <a class="logo" href="index.html">
-      <span class="mark">
-        <svg viewBox="0 0 24 24" fill="none"><path d="M4 12h4l3 5 3-10 3 5h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </span>
-      <span>二进制花园</span>
-    </a>
-    <div class="nav-links">
-      <a href="#articles">文章</a>
-      <a href="#projects">项目</a>
-      <a href="#about">关于</a>
-      <a class="gh" href="https://github.com/Vanity-1" target="_blank" rel="noopener">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.55v-2.16c-3.2.7-3.87-1.38-3.87-1.38-.52-1.33-1.28-1.68-1.28-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.03 1.75 2.69 1.25 3.34.95.1-.74.4-1.25.72-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.26.45-2.28 1.18-3.09-.12-.29-.51-1.46.11-3.04 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.74 0c2.18-1.49 3.14-1.18 3.14-1.18.63 1.58.24 2.75.12 3.04.73.81 1.17 1.83 1.17 3.09 0 4.42-2.69 5.38-5.25 5.67.41.35.77 1.05.77 2.12v3.14c0 .31.2.67.8.55A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z"/></svg>
-        GitHub
-      </a>
+  <header class="site-header">
+    <div class="container inner">
+      <a class="logo" href="#top">&lt;Code/&gt;Craft</a>
+      <nav class="site-nav">
+        <a href="#articles">文章</a>
+        <a href="#interact">互动</a>
+        <a href="#guestbook">留言</a>
+        <a href="#about">关于</a>
+        <a href="https://github.com/Vanity-1" target="_blank" rel="noopener">GitHub</a>
+      </nav>
+      <div class="theme-switch">
+        <button data-theme-btn="playful" title="奇趣互动派">🎨</button>
+        <button data-theme-btn="cyber" title="赛博暗色派">⚡</button>
+        <button data-theme-btn="editorial" title="极简编辑派">✒️</button>
+      </div>
     </div>
-  </div>
-</nav>
+  </header>
 
-<!-- Hero -->
-<header class="hero">
-  <span class="eyebrow"><span class="dot"></span> 个人技术博客 · 持续更新</span>
-  <h1>在代码与工程之间<br><span class="grad-text">种一座自己的花园</span></h1>
-  <p class="lead">记录软件工程与 AI 应用方向的<b>实践、踩坑与思考</b>——从检索增强、Agent 编排、视频知识库到工程化落地，每一篇都尽量给出可复现的结论与数据。</p>
-  <div class="cta-row">
-    <a class="btn btn-primary" href="#articles">读技术文章</a>
-    <a class="btn btn-ghost" href="#projects">看落地项目</a>
-  </div>
-  <div class="stats reveal">
-    <div class="chip"><div class="v grad-text"><span data-count="9">0</span></div><div class="l">技术文章</div></div>
-    <div class="chip"><div class="v grad-text"><span data-count="9">0</span></div><div class="l">落地项目</div></div>
-    <div class="chip"><div class="v grad-text"><span data-count="700">0</span>*</div><div class="l">手写 Agent 核心行数</div></div>
-    <div class="chip"><div class="v grad-text"><span data-count="2">0</span></div><div class="l">平台接入（视频知识库）</div></div>
-  </div>
-</header>
-
-<!-- 文章 -->
-<section id="articles">
-  <div class="sec-head reveal">
-    <h2 class="sec-title"><span class="idx">01</span>技术实录</h2>
-    <a class="sec-more" href="https://Vanity-1.github.io/articles/pitfalls-multiagent-rag.html">全部文章 →</a>
-  </div>
-  <div class="grid-2">
-    <a class="card reveal" href="articles/pitfalls-multiagent-rag.html">
-      <div class="art art-rag">
-        <svg viewBox="0 0 400 120" preserveAspectRatio="xMidYMid slice">
-          <g fill="none" stroke-linecap="round">
-            <path d="M30 80 C90 20,150 120,210 60 S330 20,375 70" stroke="rgba(56,224,224,.5)" stroke-width="1.5"/>
-            <path d="M30 95 C110 40,160 100,230 50 S320 90,375 55" stroke="rgba(155,140,255,.45)" stroke-width="1.5"/>
-            <path d="M30 65 C100 100,180 30,260 90 S320 30,375 80" stroke="rgba(91,240,176,.4)" stroke-width="1.5"/>
-          </g>
-          <g fill="#38e0e0"><circle cx="30" cy="80" r="4"/><circle cx="210" cy="60" r="4"/><circle cx="375" cy="70" r="4"/></g>
-          <g fill="#9b8cff"><circle cx="90" cy="20" r="3"/><circle cx="150" cy="120" r="3"/><circle cx="330" cy="20" r="3"/></g>
-        </svg>
-      </div>
-      <div class="tag-row"><span class="badge b">踩坑实录</span><span class="badge">RAG</span><span class="badge">Agent</span></div>
-      <h3>多源客服系统二开：从「静默失败」到「检索可靠」</h3>
-      <p class="desc">嵌入模型不一致导致的静默检索失败、多源拼接被强源淹没、chroma 落盘丢段、ADK 旧 API 停产——5 个坑的一套解法。</p>
-      <div class="foot"><span>约 8 分钟</span><span class="ctl">阅读 <span>→</span></span></div>
-    </a>
-    <a class="card reveal" href="articles/rrf-vs-plain-experiment.html">
-      <div class="art art-rr">
-        <svg viewBox="0 0 400 120" preserveAspectRatio="xMidYMid slice">
-          <g font-size="13" font-family="monospace" text-anchor="middle">
-            <text x="130" y="52" fill="#38e0e0">C</text>
-            <text x="160" y="52" fill="#ffcf6b">P</text>
-            <text x="190" y="52" fill="#38e0e0">C</text>
-            <text x="220" y="52" fill="#ffcf6b">P</text>
-            <text x="250" y="52" fill="#38e0e0">C</text>
-            <text x="190" y="88" fill="#5d6b84" font-size="11">一直没政策 → RRF 提到第 2 位</text>
-          </g>
-          <path d="M120 40 H270" stroke="rgba(255,207,107,.5)" stroke-dasharray="4 4"/>
-        </svg>
-      </div>
-      <div class="tag-row"><span class="badge p">量化实验</span><span class="badge">RRF</span><span class="badge">融合检索</span></div>
-      <h3>RRF 融合 vs 直接拼接：命中率 9/12 → 12/12 的可复现对比</h3>
-      <p class="desc">商品目录(9288) 淹没政策(8) 时怎么办？用倒数排名融合把弱源高相关文档稳定提升到第 2 位。</p>
-      <div class="foot"><span>约 6 分钟</span><span class="ctl">阅读 <span>→</span></span></div>
-    </a>
-    <a class="card reveal" href="articles/700-lines-agent-nanoagent.html">
-      <div class="art art-na">
-        <svg viewBox="0 0 400 120" preserveAspectRatio="xMidYMid slice">
-          <g font-size="15" font-family="monospace" text-anchor="middle">
-            <text x="400" y="46" fill="#38e0e0">while</text>
-            <text x="400" y="66" fill="#ff8fb8">loop:</text>
-            <text x="400" y="88" fill="#7ff2ef">think → tool → ctx</text>
-          </g>
-          <g fill="#38e0e0"><circle cx="60" cy="95" r="4"/><circle cx="140" cy="25" r="3"/><circle cx="230" cy="60" r="5"/><circle cx="320" cy="30" r="3"/></g>
-          <path d="M60 95 C120 30,170 90,230 60 S300 20,340 40" stroke="rgba(56,224,224,.5)" stroke-width="1.5" fill="none"/>
-        </svg>
-      </div>
-      <div class="tag-row"><span class="badge">框架解析</span><span class="badge">Agent</span><span class="badge">源码</span></div>
-      <h3>700 行手写一个 Agent 框架：NanoAgent 的原理</h3>
-      <p class="desc">一个成熟 Agent 的核心只有三件事：把函数变工具、reAct 主循环、可靠记进上下文。700 行如何自洽实现？</p>
-      <div class="foot"><span>约 10 分钟</span><span class="ctl">阅读 <span>→</span></span></div>
-    </a>
-    <a class="card reveal" href="articles/clipmind-video-knowledge-base.html">
-      <div class="art art-cm">
-        <svg viewBox="0 0 400 120" preserveAspectRatio="xMidYMid slice">
-          <g stroke-linecap="round" fill="none">
-            <path d="M60 80 L95 80 L95 45 L120 45 L120 35 L165 35 L165 45 L210 45 L210 80 L245 80 Z" stroke="rgba(255,143,184,.6)" stroke-width="1.5"/>
-            <path d="M95 45 L120 45 M120 45 L120 60 M95 80 L79 92 M245 80 L261 92" stroke="rgba(155,140,255,.5)" stroke-width="1.5"/>
-            <path d="M285 40 C305 30,315 60,335 55 S365 80,375 70" stroke="rgba(56,224,224,.55)" stroke-width="1.5"/>
-          </g>
-          <g fill="#ff8fb8"><circle cx="95" cy="45" r="3.5"/><circle cx="120" cy="45" r="3.5"/><circle cx="165" cy="40" r="3.5"/><circle cx="210" cy="45" r="3.5"/></g>
-          <g fill="#38e0e0"><circle cx="285" cy="40" r="3.5"/><circle cx="335" cy="55" r="3.5"/><circle cx="420" cy="65" r="3.5"/></g>
-        </svg>
-      </div>
-      <div class="tag-row"><span class="badge b">工程实战</span><span class="badge">ASR</span><span class="badge">RAG</span></div>
-      <h3>把收藏视频变成可对话知识库：ClipMind 拆解</h3>
-      <p class="desc">B站/抖音收藏夹同步、ASR 转写、向量入库、RAG 问答追溯来源——一个本地优先视频知识库的工程取舍。</p>
-      <div class="foot"><span>约 9 分钟</span><span class="ctl">阅读 <span>→</span></span></div>
-    </a>
-    <a class="card reveal" href="articles/inference-gateway.html">
-      <div class="art art-ig">
-        <svg viewBox="0 0 400 120" preserveAspectRatio="xMidYMid slice">
-          <g font-size="13" font-family="monospace" text-anchor="middle">
-            <text x="200" y="40" fill="#38e0e0">route</text>
-            <text x="200" y="60" fill="#ffcf6b">cache</text>
-            <text x="200" y="80" fill="#ff8fb8">validate</text>
-          </g>
-          <g fill="#38e0e0"><circle cx="60" cy="60" r="4"/><circle cx="340" cy="60" r="4"/></g>
-          <path d="M70 60 H330" stroke="rgba(56,224,224,.5)" stroke-dasharray="4 4"/>
-          <g fill="#5bf0b0"><circle cx="120" cy="95" r="3"/><circle cx="200" cy="20" r="3"/><circle cx="280" cy="95" r="3"/></g>
-        </svg>
-      </div>
-      <div class="tag-row"><span class="badge b">工程实战</span><span class="badge">推理网关</span><span class="badge">缓存</span></div>
-      <h3>本地推理网关：给 ollama 加一层路由 + 缓存 + 校验</h3>
-      <p class="desc">多模型路由、提示缓存、结构化输出校验与回退——三个问题一次收口，缓存命中延迟从 208ms 降到 0.04ms。</p>
-      <div class="foot"><span>约 8 分钟</span><span class="ctl">阅读 <span>→</span></span></div>
-    </a>
-    <a class="card reveal" href="articles/edu-db-readonly-gateway.html">
-      <div class="art art-lock">
-        <svg viewBox="0 0 400 120" preserveAspectRatio="xMidYMid slice">
-          <g fill="none" stroke-linecap="round">
-            <path d="M80 60 h45" stroke="rgba(56,224,224,.6)" stroke-width="1.5"/>
-            <path d="M95 60 v-12 a15 15 0 0 1 30 0 v12" stroke="rgba(56,224,224,.9)" stroke-width="2"/>
-            <rect x="80" y="60" width="60" height="34" rx="6" stroke="rgba(255,207,107,.7)" stroke-width="2"/>
-            <circle cx="110" cy="76" r="4" fill="#ffcf6b"/>
-            <path d="M110 76 v8" stroke="#ffcf6b" stroke-width="2"/>
-            <path d="M205 40 C240 60,220 80,260 72 S300 100,320 82" stroke="rgba(155,140,255,.5)" stroke-width="1.5" fill="none"/>
-            <text x="205" y="100" font-size="13" font-family="monospace" fill="#7ff2ef">SELECT · read-only</text>
-          </g>
-        </svg>
-      </div>
-      <div class="tag-row"><span class="badge b">工程实战</span><span class="badge">MCP</span><span class="badge">数据安全</span></div>
-      <h3>给业务库加一道只读网关：不写一条数据，也能放心交给 Agent 查</h3>
-      <p class="desc">词法校验 + 参数绑定 + 强制 LIMIT + mode=ro 四层纵深防御；Token 鉴权与审计留痕，让 Agent 安全查库。</p>
-      <div class="foot"><span>约 7 分钟</span><span class="ctl">阅读 <span>→</span></span></div>
-    </a>
-    <a class="card reveal" href="articles/eval-first-rag.html">
-      <div class="art art-rr">
-        <svg viewBox="0 0 400 120" preserveAspectRatio="xMidYMid slice">
-          <g font-size="12" font-family="monospace" text-anchor="middle">
-            <text x="150" y="40" fill="#38e0e0">hit@5</text>
-            <text x="230" y="40" fill="#5bf0b0">recall</text>
-            <text x="190" y="62" fill="#ffcf6b">MRR</text>
-            <text x="190" y="84" fill="#7ff2ef">recall_failure ?</text>
-            <text x="190" y="102" fill="#ff8fb8">ranking_failure</text>
-          </g>
-          <path d="M120 28 H260" stroke="rgba(255,207,107,.5)" stroke-dasharray="4 4"/>
-        </svg>
-      </div>
-      <div class="tag-row"><span class="badge p">量化实验</span><span class="badge">RAG</span><span class="badge">检索评测</span></div>
-      <h3>检索评测优先的 RAG：别急着调优，先搞清检索到底行不行</h3>
-      <p class="desc">517 条固定评测集 + 多策略对比 + 失败归因 + 忠实性校验，一次运行量化"检索行不行、差在哪、融合救不回什么"。</p>
-      <div class="foot"><span>约 8 分钟</span><span class="ctl">阅读 <span>→</span></span></div>
-    </a>
-    <a class="card reveal" href="articles/markitdown-xlsx-formatting.html">
-      <div class="art art-md">
-        <svg viewBox="0 0 400 120" preserveAspectRatio="xMidYMid slice">
-          <g font-size="12" font-family="monospace" text-anchor="middle">
-            <text x="200" y="34" fill="#38e0e0">$1,199.00</text>
-            <text x="200" y="56" fill="#ffcf6b">25.5%</text>
-            <text x="200" y="78" fill="#5bf0b0">2024-01-15</text>
-            <text x="200" y="100" fill="#ff8fb8">€9.50</text>
-          </g>
-          <path d="M120 24 H280" stroke="rgba(56,224,224,.5)" stroke-dasharray="4 4"/>
-        </svg>
-      </div>
-      <div class="tag-row"><span class="badge b">开源贡献</span><span class="badge">Excel</span><span class="badge">文档转换</span></div>
-      <h3>给 MarkItDown 补上 Excel 格式保留：一次 opt-in 配置的开源贡献</h3>
-      <p class="desc">$1,199.00 转出来只剩 1199？根因是 pandas 只读值不读格式。用 XlsxConfig 动态提取货币符号，默认行为完全向后兼容。</p>
-      <div class="foot"><span>约 8 分钟</span><span class="ctl">阅读 <span>→</span></span></div>
-    </a>
-    <a class="card reveal" href="articles/litellm-multi-objective-routing.html">
-      <div class="art art-ll">
-        <svg viewBox="0 0 400 120" preserveAspectRatio="xMidYMid slice">
-          <g fill="none" stroke-linecap="round">
-            <path d="M40 60 H360" stroke="rgba(56,224,224,.5)" stroke-dasharray="4 4"/>
-            <path d="M120 60 L120 30 L200 30 L200 90 L280 90 L280 60" stroke="rgba(155,140,255,.55)" stroke-width="1.5"/>
-          </g>
-          <g fill="#38e0e0"><circle cx="40" cy="60" r="4"/><circle cx="360" cy="60" r="4"/></g>
-          <g fill="#ffcf6b"><circle cx="120" cy="30" r="3.5"/><circle cx="200" cy="90" r="3.5"/><circle cx="280" cy="60" r="3.5"/></g>
-          <text x="200" y="112" font-size="12" font-family="monospace" text-anchor="middle" fill="#7ff2ef">w_latency · w_cost · w_success · w_throughput</text>
-        </svg>
-      </div>
-      <div class="tag-row"><span class="badge b">开源贡献</span><span class="badge">LLM 网关</span><span class="badge">路由策略</span></div>
-      <h3>给 LiteLLM 加一个多目标路由策略：四维加权评分怎么设计</h3>
-      <p class="desc">官方策略都是单一目标。用延迟、成本、成功率、吞吐量四维加权评分，Min-Max 归一化 + 冷启动 + 限额过滤，18 个单测锁行为。</p>
-      <div class="foot"><span>约 9 分钟</span><span class="ctl">阅读 <span>→</span></span></div>
-    </a>
-  </div>
-</section>
-
-<!-- 项目 -->
-<section id="projects">
-  <div class="sec-head reveal">
-    <h2 class="sec-title"><span class="idx">02</span>落地项目</h2>
-  </div>
-  <div class="grid-2">
-    <a class="card reveal" href="https://github.com/Vanity-1/ecommerce-retail-rag-mcp" target="_blank" rel="noopener">
-      <div class="tag-row"><span class="badge b">主项目</span><span class="badge">RAG + MCP</span></div>
-      <h3>E-commerce Retail RAG + MCP 客服系统</h3>
-      <p class="desc">Google ADK 编排多源 RAG 检索，RRF 融合商品目录与政策；端到端 Web Demo 现场可跑，回答带出处引用。</p>
-      <div class="foot"><span>54 文件 · 完整文档</span><span class="ctl">GitHub <span>→</span></span></div>
-    </a>
-    <a class="card reveal" href="https://github.com/Vanity-1/langgraph-retail-assistant" target="_blank" rel="noopener">
-      <div class="tag-row"><span class="badge p">LangGraph</span><span class="badge">多 Agent</span></div>
-      <h3>LangGraph 多 Agent 零售客服</h3>
-      <p class="desc">LangGraph StateGraph 实现销售/客服路由与 Human-in-the-loop 退货审批；嵌入层本地化 + 测试守卫加固。</p>
-      <div class="foot"><span>28 文件 · 含完整测试</span><span class="ctl">GitHub <span>→</span></span></div>
-    </a>
-    <a class="card reveal" href="articles/700-lines-agent-nanoagent.html">
-      <div class="tag-row"><span class="badge">框架</span><span class="badge">Agent</span><span class="badge">MCP</span></div>
-      <h3>NanoAgent：700 行手写 Agent 框架</h3>
-      <p class="desc">极简 Python Agent 框架：@function_tool 装饰器、reAct 主循环、流式输出，并原生集成 MCP 工具生态。</p>
-      <div class="foot"><span>核心约 700 行 · 含测试</span><span class="ctl">GitHub <span>→</span></span></div>
-    </a>
-    <a class="card reveal" href="articles/clipmind-video-knowledge-base.html">
-      <div class="tag-row"><span class="badge">视频知识库</span><span class="badge">ASR</span><span class="badge">RAG</span></div>
-      <h3>ClipMind：本地优先视频知识库</h3>
-      <p class="desc">B站/抖音收藏自动同步、ASR 转写、ChromaDB 向量入库、RAG 对话追溯来源；云端/本地双模式，数据不出机。</p>
-      <div class="foot"><span>FastAPI + Next.js + Tauri</span><span class="ctl">GitHub <span>→</span></span></div>
-    </a>
-    <a class="card reveal" href="https://github.com/Vanity-1/inference-gateway" target="_blank" rel="noopener">
-      <div class="tag-row"><span class="badge p">推理网关</span><span class="badge">缓存</span><span class="badge">结构化输出</span></div>
-      <h3>Inference Gateway：本地推理网关</h3>
-      <p class="desc">ollama 之上的网关层：多模型路由 + 健康降级、响应缓存与 KV 前缀复用、结构化输出校验重试回退；41 单测 + 一键基准。</p>
-      <div class="foot"><span>FastAPI · 41 测试 · 基准可复现</span><span class="ctl">GitHub <span>→</span></span></div>
-    </a>
-    <a class="card reveal" href="https://github.com/Vanity-1/edu-db-readonly-mcp" target="_blank" rel="noopener">
-      <div class="tag-row"><span class="badge b">数据安全</span><span class="badge">MCP</span><span class="badge">FastMCP</span></div>
-      <h3>Edu DB Readonly Gateway：教育教务只读数据库网关 MCP</h3>
-      <p class="desc">四层纵深防御的只读 SQL 网关：词法校验 + 参数绑定 + 强制 LIMIT + mode=ro；Token 鉴权与审计留痕。</p>
-      <div class="foot"><span>官方 SDK · 26 测试 · 端到端 demo</span><span class="ctl">GitHub <span>→</span></span></div>
-    </a>
-    <a class="card reveal" href="https://github.com/Vanity-1/eval-first-rag" target="_blank" rel="noopener">
-      <div class="tag-row"><span class="badge p">检索评测</span><span class="badge">RRF</span><span class="badge">可靠性</span></div>
-      <h3>Eval-first RAG：检索评测优先的 RAG 基准</h3>
-      <p class="desc">517 条固定评测集 + 多策略对比 + 失败归因 + 忠实性校验，量化多源融合的取舍与边界；零依赖、可复现。</p>
-      <div class="foot"><span>20 文件 · 6 测试 · seed=42 可复现</span><span class="ctl">GitHub <span>→</span></span></div>
-    </a>
-    <a class="card reveal" href="https://github.com/Vanity-1/markitdown" target="_blank" rel="noopener">
-      <div class="tag-row"><span class="badge b">开源贡献</span><span class="badge">MarkItDown</span><span class="badge">Excel</span></div>
-      <h3>MarkItDown Excel 格式保留（上游 PR #2347）</h3>
-      <p class="desc">为微软 MarkItDown（60k+ star）修复 Excel 货币格式丢失（issue #53）。opt-in 的 XlsxConfig 动态提取货币符号，默认向后兼容，8 测试无回归。</p>
-      <div class="foot"><span>PR #2347 · 8 测试 · 已签 CLA</span><span class="ctl">GitHub <span>→</span></span></div>
-    </a>
-    <a class="card reveal" href="https://github.com/Vanity-1/litellm" target="_blank" rel="noopener">
-      <div class="tag-row"><span class="badge b">开源 Fork</span><span class="badge">LiteLLM</span><span class="badge">路由策略</span></div>
-      <h3>LiteLLM 多目标路由策略（Fork）</h3>
-      <p class="desc">为 LiteLLM（30k+ star LLM 网关）扩展四维加权评分路由：延迟/成本/成功率/吞吐量，Min-Max 归一化 + 冷启动 + 限额过滤，18 单测全过。</p>
-      <div class="foot"><span>451 行策略 · 18 测试 · 分支 feat/multi-objective-routing</span><span class="ctl">GitHub <span>→</span></span></div>
-    </a>
-  </div>
-</section>
-
-<!-- 技能栈 -->
-<section id="stack">
-  <div class="sec-head reveal">
-    <h2 class="sec-title"><span class="idx">03</span>技术栈</h2>
-  </div>
-  <div class="skills reveal">
-    <span class="skill"><span class="ic" style="background:#38e0e0"></span>RAG / 多源融合</span>
-    <span class="skill"><span class="ic" style="background:#9b8cff"></span>LangGraph 多 Agent</span>
-    <span class="skill"><span class="ic" style="background:#ffcf6b"></span>MCP 工具协议</span>
-    <span class="skill"><span class="ic" style="background:#5bf0b0"></span>向量检索 / Embedding</span>
-    <span class="skill"><span class="ic" style="background:#38e0e0"></span>ChromaDB</span>
-    <span class="skill"><span class="ic" style="background:#9b8cff"></span>Google ADK</span>
-    <span class="skill"><span class="ic" style="background:#ff8fb8"></span>Ollama 本地大模型</span>
-    <span class="skill"><span class="ic" style="background:#5bf0b0"></span>Python / FastAPI</span>
-    <span class="skill"><span class="ic" style="background:#ff8fb8"></span>ASR 语音转写</span>
-    <span class="skill"><span class="ic" style="background:#9b8cff"></span>Next.js / Tauri</span>
-  </div>
-</section>
-
-<!-- 关于 -->
-<section id="about">
-  <div class="sec-head reveal">
-    <h2 class="sec-title"><span class="idx">04</span>关于</h2>
-  </div>
-  <div class="about">
-    <div class="bio reveal profile-bio">
-      <div class="phead">
-        <span class="avatar">V</span>
-        <div>
-          <div class="nm">Vanity</div>
-          <div class="rol">RAG · Agent 工程实践者</div>
-        </div>
-      </div>
-      <p>写代码的普通人，主业检索增强和大模型 Agent 的落地。踩过的坑会整理成文章，尽量一次讲明白、能复现，欢迎一起聊。</p>
-      <h4>关注方向</h4>
-      <div class="tags"><span>RAG</span><span>Agent</span><span>LangGraph</span><span>MCP</span><span>本地大模型</span></div>
-      <a class="gh-link" href="https://github.com/Vanity-1" target="_blank" rel="noopener">GitHub →</a>
+  <section class="hero" id="top">
+    <canvas id="fx-canvas"></canvas>
+    <div class="container" style="position:relative">
+      <h1 id="hero-title" data-text="你好，我是 Vanity，一名 RAG / Agent 工程实践者。">你好，我是 Vanity，一名 RAG / Agent 工程实践者。</h1>
+      <p class="sub" id="hero-sub">写 RAG 与 Agent 的工程手记，也折腾前端动效。</p>
+      <a class="cta" href="#articles" data-confetti>阅读文章 ↓</a>
     </div>
-    <div class="bio reveal">
-      <h3>关于我</h3>
-      <p>软件工程方向，关注 <b>检索增强生成（RAG）与 AI Agent 的工程落地</b>。相比「把功能做出来」，更在意把项目打磨到 <b>可靠、可复现、可现场演示</b>。</p>
-      <ul>
-        <li><span class="ck">✓</span> 能定位嵌入不一致、多源淹没这类「跑得通但结果不对」的隐性故障</li>
-        <li><span class="ck">✓</span> 习惯用单测守卫 + 量化实验锁住质量，而不是口头说「效果不错」</li>
-        <li><span class="ck">✓</span> 产出可现场跑的 Demo 与带数据结论的实验报告</li>
-      </ul>
+  </section>
+
+  <section class="section" id="articles">
+    <div class="container">
+      <h2 class="reveal">最新文章</h2>
+      <p class="reveal sec-desc">检索增强、Agent 编排、开源贡献与前端实验的实践记录——每篇尽量给出可复现的结论与数据。点击卡片阅读全文。</p>
+      <div class="cards" id="cards"></div>
     </div>
-    <div class="bio reveal">
-      <h3>这里会写什么</h3>
-      <p>面向工程师与对 AI 应用感兴趣的人，内容围绕工程实践展开：</p>
-      <ul>
-        <li><span class="ck">+</span> 检索增强与 Agent 的工程实践、踩坑与解法</li>
-        <li><span class="ck">+</span> 可复现的量化实验与数据结论</li>
-        <li><span class="ck">+</span> 开源项目二次开发与本地化部署经验</li>
-      </ul>
+  </section>
+
+  <section class="section" id="interact">
+    <div class="container">
+      <h2 class="reveal">互动彩蛋</h2>
+      <div class="interact reveal">
+        <button class="like-btn" id="likeBtn" data-confetti>👍 有帮助（128）</button>
+        <p>页面上的九个特效——粒子网络、乱码解密、光标拖尾、3D 视差、彩带、打字机、滚动显现、弹性卡片、条纹进度条——始终同屏运行。切换右上角主题不会关掉任何一个，只会给它们换上当前风格的配色：点一下左边的按钮，彩带颜色会跟着主题变。</p>
+      </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- 留言板 -->
-<section id="guestbook" class="guestbook">
-  <div class="sec-head reveal">
-    <h2 class="sec-title"><span class="idx">05</span>留言板</h2>
-    <a class="sec-more" href="https://github.com/Vanity-1/Vanity-1.github.io/discussions" target="_blank" rel="noopener">GitHub Discussions →</a>
-  </div>
-  <div class="msg-card reveal">
-    <div class="msg-sub">欢迎在这里留言交流，评论存于 GitHub Discussions。</div>
-    <div id="giscus" class="giscus"></div>
-  </div>
-</section>
+  <section class="section" id="guestbook">
+    <div class="container">
+      <h2 class="reveal">留言板</h2>
+      <form id="gbForm" class="gb-form reveal">
+        <input id="gbName" type="text" maxlength="20" placeholder="你的名字（可选）" autocomplete="name">
+        <textarea id="gbText" rows="3" maxlength="500" placeholder="写点什么…对某篇文章的疑问、捉到的 bug，或者只是打个招呼。" required></textarea>
+        <button type="submit" class="like-btn" data-confetti>📮 提交留言</button>
+      </form>
+      <p id="gbEmpty" class="gb-empty reveal">还没有留言，来当第一个吧。</p>
+      <div id="gbList" class="gb-list"></div>
+    </div>
+  </section>
 
-<footer>
-  本站点托管于 GitHub Pages
-  <div class="flinks">
-    <a href="https://github.com/Vanity-1/ecommerce-retail-rag-mcp" target="_blank" rel="noopener">RAG+MCP 项目</a>
-    <a href="https://github.com/Vanity-1/langgraph-retail-assistant" target="_blank" rel="noopener">LangGraph 项目</a>
-    <a href="https://github.com/Vanity-1/NanoAgent" target="_blank" rel="noopener">NanoAgent 框架</a>
-    <a href="https://github.com/Vanity-1/ClipMind" target="_blank" rel="noopener">ClipMind</a>
-    <a href="https://github.com/Vanity-1/inference-gateway" target="_blank" rel="noopener">推理网关</a>
-    <a href="https://github.com/Vanity-1/edu-db-readonly-mcp" target="_blank" rel="noopener">只读数据库网关</a>
-    <a href="https://github.com/Vanity-1/eval-first-rag" target="_blank" rel="noopener">检索评测基准</a>
-    <a href="https://github.com/Vanity-1/markitdown" target="_blank" rel="noopener">MarkItDown 贡献</a>
-    <a href="https://github.com/Vanity-1/litellm" target="_blank" rel="noopener">LiteLLM 路由 Fork</a>
-    <a href="https://github.com/Vanity-1" target="_blank" rel="noopener">GitHub 主页</a>
-  </div>
-</footer>
+  <section class="section about" id="about">
+    <div class="container">
+      <h2 class="reveal">关于我</h2>
+      <p class="reveal">写代码的普通人，主业检索增强和大模型 Agent 的落地，偶尔研究前端动效与创意编码。踩过的坑会整理成文章，尽量一次讲明白、能复现，欢迎在留言板或 GitHub 一起聊。本页是纯前端单页：三个主题的专属特效共存，顶栏开关只切换视觉风格与特效配色，零构建、零依赖，双击 index.html 就能打开。</p>
+      <div class="tags reveal" id="aboutTags" style="margin-top:22px"></div>
+    </div>
+  </section>
 
-<button id="topBtn" aria-label="回到顶部">
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
-</button>
+  <footer class="site-footer">
+    <div class="container">
+      <span>© 2026 Code &amp; Craft · 纯前端零构建 · 三主题特效常驻</span>
+      <span>GitHub · <a href="https://github.com/Vanity-1" target="_blank" rel="noopener">Vanity-1</a></span>
+      <span id="themeTip"></span>
+    </div>
+  </footer>
 
-<!-- Giscus 留言板加载 -->
-<script>
-(function(){
-  var g=document.getElementById('giscus');
-  if(!g) return;
-  var REPO='Vanity-1/Vanity-1.github.io';
-  var REPO_ID='R_kgDOUAvTBQ';
-  var CATEGORY='General';            // 留言分类：仓库 Discussions 的 General
-  var CATEGORY_ID='DIC_kwDOUAvTBc4DEH5u';
-  var s=document.createElement('script');
-  s.src='https://giscus.app/client.js';
-  s.setAttribute('data-repo',REPO);
-  s.setAttribute('data-repo-id',REPO_ID);
-  s.setAttribute('data-category',CATEGORY);
-  s.setAttribute('data-category-id',CATEGORY_ID);
-  s.setAttribute('data-mapping','pathname');
-  s.setAttribute('data-strict','0');
-  s.setAttribute('data-reactions-enabled','1');
-  s.setAttribute('data-emit-metadata','0');
-  s.setAttribute('data-input-position','bottom');
-  s.setAttribute('data-theme','transparent_dark');
-  s.setAttribute('data-lang','zh-CN');
-  s.crossOrigin='anonymous';
-  s.async=true;
-  document.body.appendChild(s);
-})();
-</script>
-<script src="assets/main.js"></script>
+  <script src="data/articles.js"></script>
+  <script src="assets/js/fx-core.js"></script>
+  <script src="assets/js/main.js"></script>
 </body>
 </html>

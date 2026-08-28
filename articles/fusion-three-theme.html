@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="playful">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>文章 · Code &amp; Craft</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@400;700&family=JetBrains+Mono:wght@500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@400;700&family=JetBrains+Mono:wght@500;700&family=Inter:wght@400;600&display=swap"></noscript>
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/article.css">
+  <link rel="stylesheet" href="../assets/css/theme-playful.css">
+  <link rel="stylesheet" href="../assets/css/theme-cyber.css">
+  <link rel="stylesheet" href="../assets/css/theme-editorial.css">
+  <script src="../assets/js/theme-switch.js"></script>
+</head>
+<body>
+  <div id="progress"></div>
+
+  <header class="site-header">
+    <div class="container inner">
+      <a class="logo" href="../index.html#top">&lt;Code/&gt;Craft</a>
+      <nav class="site-nav">
+        <a href="../index.html#articles">文章</a>
+        <a href="../index.html#interact">互动</a>
+        <a href="../index.html#guestbook">留言</a>
+        <a href="../index.html#about">关于</a>
+        <a href="https://github.com/Vanity-1" target="_blank" rel="noopener">GitHub</a>
+      </nav>
+      <div class="theme-switch">
+        <button data-theme-btn="playful" title="奇趣互动派">🎨</button>
+        <button data-theme-btn="cyber" title="赛博暗色派">⚡</button>
+        <button data-theme-btn="editorial" title="极简编辑派">✒️</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="art-wrap">
+    <div class="art-crumb"><a href="../index.html">首页</a><span> / 文章</span></div>
+    <h1 class="art-title" id="hero-title"></h1>
+    <div class="art-meta">
+      <span class="avatar">V</span>
+      <span>Vanity</span>
+      <span id="art-date"></span>
+      <span id="art-read"></span>
+      <span id="art-tags"></span>
+    </div>
+    <div class="art-body" id="art-body"></div>
+    <nav class="art-nav">
+      <a href="../index.html#articles">← 回到文章列表</a>
+      <a href="../index.html#guestbook">留言交流 →</a>
+    </nav>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <span>© 2026 Code &amp; Craft · 纯前端零构建 · 三主题特效常驻</span>
+      <span>GitHub · <a href="https://github.com/Vanity-1" target="_blank" rel="noopener">Vanity-1</a></span>
+    </div>
+  </footer>
+
+  <script src="../data/articles.js"></script>
+  <script src="../assets/js/fx-core.js"></script>
+  <script src="../assets/js/article.js"></script>
+</body>
+</html>

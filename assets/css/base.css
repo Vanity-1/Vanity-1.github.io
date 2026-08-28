@@ -1,0 +1,184 @@
+/* base.css —— 融合版布局骨架与通用组件（主题无关，颜色全部走变量） */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root { color-scheme: light dark; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: var(--font-body); line-height: 1.75;
+  transition: background .4s, color .4s;
+}
+a { color: var(--accent); text-decoration: none; }
+.container { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+/* 顶栏 */
+.site-header { position: sticky; top: 0; z-index: 50;
+  background: var(--bg-header); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line); }
+.site-header .inner { display: flex; align-items: center; gap: 28px; height: 64px; }
+.logo { font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; color: var(--text); }
+.site-nav { display: flex; gap: 20px; flex: 1; }
+.site-nav a { color: var(--text-dim); position: relative; padding: 4px 0; }
+.site-nav a:hover { color: var(--text); }
+.site-nav a::after { content: ''; position: absolute; left: 0; bottom: 0; width: 100%;
+  height: 2px; background: var(--accent); transform: scaleX(0); transform-origin: left;
+  transition: transform .25s ease; }
+.site-nav a:hover::after { transform: scaleX(1); }
+
+/* 主题切换器 */
+.theme-switch { display: flex; gap: 6px; background: var(--bg-card);
+  border: 1px solid var(--line); border-radius: 999px; padding: 4px; }
+.theme-switch button { width: 32px; height: 32px; border-radius: 50%; border: none;
+  cursor: pointer; font-size: 15px; background: transparent;
+  transition: transform .2s cubic-bezier(.34,1.56,.64,1), background .2s; }
+.theme-switch button:hover { transform: scale(1.15); }
+.theme-switch button.active { background: var(--accent); }
+
+/* Hero */
+.hero { padding: 110px 0 90px; position: relative; overflow: hidden; }
+.hero h1 { font-family: var(--font-display); font-size: clamp(2.2rem, 6vw, 4rem);
+  line-height: 1.15; color: var(--text); }
+.hero .sub { margin-top: 18px; font-size: 1.15rem; color: var(--text-dim); min-height: 1.75em; }
+.hero .cta { display: inline-block; margin-top: 34px; padding: 12px 30px;
+  background: var(--accent); color: var(--accent-contrast); border: none; cursor: pointer;
+  border-radius: var(--radius); font-size: 1rem; font-weight: 600;
+  transition: transform .18s cubic-bezier(.34,1.56,.64,1), box-shadow .18s; }
+.hero .cta:hover { transform: translateY(-3px) scale(1.03); box-shadow: var(--glow); }
+#fx-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+
+/* 区块标题 */
+.section { padding: 70px 0; }
+.section h2 { font-family: var(--font-display); font-size: 1.8rem; margin-bottom: 14px; color: var(--text); }
+.sec-desc { color: var(--text-dim); font-size: .95rem; margin-bottom: 30px; max-width: 62ch; }
+
+/* 卡片网格 */
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 22px; }
+.card { background: var(--bg-card); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 24px; display: block; color: var(--text); position: relative;
+  transition: transform .25s cubic-bezier(.34,1.56,.64,1), box-shadow .25s, border-color .25s;
+  transform-style: preserve-3d; will-change: transform; }
+.card:hover { border-color: var(--accent); box-shadow: var(--glow); }
+.card .meta { font-size: .8rem; color: var(--text-dim); margin-bottom: 10px; display: flex; gap: 12px; }
+.card h3 { font-family: var(--font-display); font-size: 1.15rem; margin-bottom: 10px; line-height: 1.4; }
+.card p { color: var(--text-dim); font-size: .92rem; }
+.card .tags { margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+.tag { font-size: .72rem; padding: 3px 10px; border-radius: 999px;
+  background: var(--tag-bg); color: var(--accent); border: 1px solid var(--line); }
+
+/* 互动区（点赞彩带）/ 关于区 / 页脚 */
+.interact { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+.interact p { color: var(--text-dim); max-width: 52ch; }
+.like-btn { padding: 10px 26px; border-radius: 999px; border: 1px solid var(--line);
+  background: var(--bg-card); color: var(--text); cursor: pointer; font-size: .95rem;
+  transition: transform .18s cubic-bezier(.34,1.56,.64,1), border-color .2s; }
+.like-btn:hover { transform: scale(1.08); border-color: var(--accent); }
+.about p { color: var(--text-dim); max-width: 62ch; }
+.site-footer { border-top: 1px solid var(--line); padding: 34px 0; color: var(--text-dim); font-size: .85rem; }
+.site-footer .container { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+
+/* 滚动进度条（三主题各自装饰：糖果条纹 / 霓虹发光 / 金色细线） */
+#progress { position: fixed; top: 0; left: 0; height: 4px; width: 0; z-index: 99;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+
+/* 滚动显现（融合版全站生效，IntersectionObserver 驱动） */
+.reveal { opacity: 0; transform: translateY(26px);
+  transition: opacity .6s ease, transform .6s ease; }
+.reveal.in-view { opacity: 1; transform: none; }
+/* 卡片保留弹性缓动（优先级高于 .reveal 的通用过渡） */
+.card.reveal {
+  transition: opacity .6s ease,
+              transform .25s cubic-bezier(.34,1.56,.64,1),
+              box-shadow .25s, border-color .25s;
+}
+
+/* 留言板 */
+.gb-form { display: flex; flex-direction: column; gap: 12px; max-width: 620px; margin-bottom: 34px; }
+.gb-form input, .gb-form textarea {
+  background: var(--bg-card); border: 1px solid var(--line); border-radius: var(--radius);
+  color: var(--text); font-family: var(--font-body); font-size: .95rem; padding: 12px 16px;
+  resize: vertical; transition: border-color .2s, box-shadow .2s;
+}
+.gb-form input::placeholder, .gb-form textarea::placeholder { color: var(--text-dim); }
+.gb-form input:focus, .gb-form textarea:focus { outline: none; border-color: var(--accent); box-shadow: var(--glow); }
+.gb-form button { align-self: flex-start; }
+.gb-empty { color: var(--text-dim); font-size: .9rem; }
+.gb-list { display: grid; gap: 14px; max-width: 620px; }
+.msg-card { background: var(--bg-card); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 16px 20px; transition: border-color .25s, box-shadow .25s; }
+.msg-card:hover { border-color: var(--accent); box-shadow: var(--glow); }
+.msg-card .msg-head { display: flex; justify-content: space-between; gap: 12px; font-size: .82rem; margin-bottom: 6px; }
+.msg-card .msg-head strong { color: var(--accent); }
+.msg-card .msg-head span { color: var(--text-dim); font-weight: 400; }
+.msg-card p { color: var(--text-dim); font-size: .92rem; white-space: pre-wrap; word-break: break-word; }
+.msg-new { animation: msg-in .45s cubic-bezier(.34,1.56,.64,1); }
+@keyframes msg-in { from { opacity: 0; transform: translateY(-12px) scale(.97); } }
+
+/* 光标拖尾（cyber） */
+.fx-trail-dot { position: fixed; width: 10px; height: 10px; border-radius: 50%; pointer-events: none;
+  z-index: 9999; background: var(--accent-2); box-shadow: 0 0 12px var(--accent-2); }
+
+/* 彩带碎片（playful） */
+.fx-confetti { position: fixed; width: 8px; height: 8px; pointer-events: none; z-index: 9999; }
+
+/* ============ View Transitions ============ */
+/* 默认：圆形扩散（从点击点） */
+::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+::view-transition-new(root) { animation: vt-circle .55s cubic-bezier(.4, 0, .2, 1); }
+@keyframes vt-circle {
+  from { clip-path: circle(0px at var(--vt-x, 50%) var(--vt-y, 50%)); }
+  to   { clip-path: circle(150% at var(--vt-x, 50%) var(--vt-y, 50%)); }
+}
+/* cyber↔editorial 强化过渡：glitch 模式
+ * 切片抖动（clip-path inset 露出旧快照形成错位）+ 亮度/对比度爆闪。
+ * 由 theme-switch.js 在过渡期间设置 html[data-vt-mode='glitch']。 */
+html[data-vt-mode='glitch'] ::view-transition-new(root) {
+  animation: vt-glitch .5s steps(7, end);
+}
+@keyframes vt-glitch {
+  0%   { clip-path: inset(0 0 0 0);    transform: translateX(0);
+         filter: brightness(2.1) contrast(1.5) saturate(1.4); }
+  18%  { clip-path: inset(8% 0 56% 0); transform: translateX(-9px);
+         filter: brightness(1.5) contrast(1.3); }
+  34%  { clip-path: inset(46% 0 16% 0); transform: translateX(7px); }
+  50%  { clip-path: inset(22% 0 42% 0); transform: translateX(-5px);
+         filter: brightness(1.25) contrast(1.15); }
+  66%  { clip-path: inset(62% 0 6% 0);  transform: translateX(4px); }
+  82%  { clip-path: inset(0 0 0 0);    transform: translateX(0); filter: none; }
+  100% { clip-path: inset(0 0 0 0);    transform: none; filter: none; }
+}
+
+/* glitch 闪光覆盖层：扫描线 + SVG 噪点 + 方向色辉光，不依赖 VTA。
+ * 由 theme-switch.js 在切换瞬间动态创建，动画结束自移除。 */
+#vt-flash { position: fixed; inset: 0; z-index: 9998; pointer-events: none;
+  opacity: 0; mix-blend-mode: screen; }
+#vt-flash.run { animation: vt-flash .55s ease-out; }
+#vt-flash.to-cyber {
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.4'/%3E%3C/svg%3E"),
+    repeating-linear-gradient(0deg, rgba(0, 240, 255, .3) 0 2px, transparent 2px 5px),
+    radial-gradient(ellipse at 50% 42%, rgba(0, 240, 255, .55), rgba(160, 0, 255, .28) 55%, transparent 78%);
+}
+#vt-flash.to-editorial {
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.4'/%3E%3C/svg%3E"),
+    repeating-linear-gradient(0deg, rgba(255, 248, 230, .24) 0 2px, transparent 2px 5px),
+    radial-gradient(ellipse at 50% 46%, rgba(255, 248, 230, .6), rgba(201, 168, 106, .28) 55%, transparent 78%);
+}
+@keyframes vt-flash {
+  0%   { opacity: 0; }
+  10%  { opacity: 1; }
+  45%  { opacity: .65; }
+  100% { opacity: 0; }
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .hero { padding: 70px 0 60px; }
+  .site-header .inner { flex-wrap: wrap; height: auto; padding: 10px 0; gap: 8px 18px; }
+  .site-nav { order: 3; width: 100%; }
+}
+/* 尊重减少动态偏好 */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  .reveal { opacity: 1; transform: none; }
+}

@@ -1,0 +1,19 @@
+/* 风格 B：赛博暗色派
+ * 融合版：粒子/乱码/拖尾/3D 视差常驻运行（fx-core.js），
+ * 粒子青色由 PARTICLE_COLORS.cyber 提供，拖尾颜色走 --accent-2 自动随主题 */
+[data-theme='cyber'] {
+  color-scheme: dark;
+  --bg: #06060F; --bg-header: rgba(6, 6, 15, .72);
+  --bg-card: rgba(255, 255, 255, .05); --line: rgba(0, 240, 255, .22);
+  --text: #EAF6FF; --text-dim: #7C8BA1;
+  --accent: #00F0FF; --accent-2: #A000FF; --accent-contrast: #001014;
+  --tag-bg: rgba(0, 240, 255, .08); --code-bg: #0A0E1A; --code-inline-bg: rgba(0, 240, 255, .1);
+  --radius: 12px;
+  --glow: 0 0 26px rgba(0, 240, 255, .18);
+  --font-display: 'JetBrains Mono', Consolas, monospace;
+  --font-body: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', Consolas, monospace;
+}
+[data-theme='cyber'] .card { backdrop-filter: blur(10px); }
+[data-theme='cyber'] .hero h1 { text-shadow: 0 0 22px rgba(0, 240, 255, .45); }
+[data-theme='cyber'] #progress { box-shadow: 0 0 12px var(--accent); }

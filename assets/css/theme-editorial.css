@@ -1,0 +1,20 @@
+/* 风格 C：极简编辑派
+ * 融合版：打字机/滚动显现常驻运行（fx-core.js），
+ * .reveal 隐藏态样式定义在 base.css（全站生效），本文件仅提供配色与装饰 */
+[data-theme='editorial'] {
+  color-scheme: dark;
+  --bg: #111113; --bg-header: rgba(17, 17, 19, .85);
+  --bg-card: #17171A; --line: #26262B;
+  --text: #F5F5F0; --text-dim: #8B8B85;
+  --accent: #C9A86A; --accent-2: #E8D5AE; --accent-contrast: #171204;
+  --tag-bg: rgba(201, 168, 106, .08); --code-bg: #0C0C0E; --code-inline-bg: #212125;
+  --radius: 6px;
+  --glow: 0 10px 30px rgba(0, 0, 0, .5);
+  --font-display: Georgia, 'Times New Roman', serif;
+  --font-body: 'Segoe UI', system-ui, sans-serif;
+  --font-mono: Consolas, monospace;
+}
+[data-theme='editorial'] .card { border-radius: 2px; }
+[data-theme='editorial'] .card:hover { transform: none; border-color: var(--accent); }
+[data-theme='editorial'] .hero h1 em { font-style: italic; color: var(--accent); }
+[data-theme='editorial'] #progress { height: 2px; background: var(--accent); }
