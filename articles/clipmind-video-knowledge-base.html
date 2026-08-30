@@ -1,32 +1,53 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="playful">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>把收藏视频变成可对话知识库：ClipMind 架构拆解 | Code &amp; Craft</title>
-<link rel="stylesheet" href="../assets/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>文章 · Code &amp; Craft</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@400;700&family=JetBrains+Mono:wght@500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@400;700&family=JetBrains+Mono:wght@500;700&family=Inter:wght@400;600&display=swap"></noscript>
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/article.css">
+  <link rel="stylesheet" href="../assets/css/theme-playful.css">
+  <link rel="stylesheet" href="../assets/css/theme-cyber.css">
+  <link rel="stylesheet" href="../assets/css/theme-editorial.css">
+  <script src="../assets/js/theme-switch.js"></script>
 </head>
 <body>
-<div class="bg-grid"></div><div class="bg-grain"></div>
-<div class="progress" id="progress"></div>
+  <div id="progress"></div>
 
-<nav class="nav"><div class="nav-in">
-  <a class="logo" href="../index.html"><span class="mark">
-    <svg viewBox="0 0 24 24" fill="none"><path d="M4 12h4l3 5 3-10 3 5h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-    <span>Code &amp; Craft</span></a>
-  <div class="nav-links"><a href="../index.html#articles">文章</a><a href="../index.html#projects">项目</a><a href="../index.html#about">关于</a></div>
-</div></nav>
+  <header class="site-header">
+    <div class="container inner">
+      <a class="logo" href="../index.html#top">&lt;Code/&gt;Craft</a>
+      <nav class="site-nav">
+        <a href="../index.html#articles">文章</a>
+        <a href="../index.html#interact">互动</a>
+        <a href="../index.html#guestbook">留言</a>
+        <a href="../index.html#about">关于</a>
+        <a href="https://github.com/Vanity-1" target="_blank" rel="noopener">GitHub</a>
+      </nav>
+      <div class="theme-switch">
+        <button data-theme-btn="playful" title="奇趣互动派">🎨</button>
+        <button data-theme-btn="cyber" title="赛博暗色派">⚡</button>
+        <button data-theme-btn="editorial" title="极简编辑派">✒️</button>
+      </div>
+    </div>
+  </header>
 
-<div class="gutter">
-<article class="article">
-  <div class="art-crumb"><a href="../index.html">首页</a><span>/</span><span>工程实战 · 04</span></div>
-  <h1 class="art-title">把收藏视频变成可对话知识库：<br>ClipMind 的架构与工程取舍</h1>
-  <div class="art-meta">
-    <span class="avatar">V</span>
-    <span>Vanity</span><span class="sep">·</span><span>2026-08</span><span class="sep">·</span><span>约 9 分钟</span><span class="sep">·</span><span>视频知识库 · ASR · RAG · FastAPI</span>
-  </div>
-
-  <nav class="toc">
+  <main class="art-wrap">
+    <div class="art-crumb"><a href="../index.html">首页</a><span> / 文章</span></div>
+    <h1 class="art-title" id="hero-title"></h1>
+    <div class="art-meta">
+      <span class="avatar">V</span>
+      <span>Vanity</span>
+      <span id="art-date"></span>
+      <span id="art-read"></span>
+      <span id="art-tags"></span>
+    </div>
+    <div class="art-body" id="art-body">
+<nav class="toc">
     <div class="t">目录</div>
     <ul>
       <li><a href="#s1"><span class="num">1</span>背景：收藏夹为什么总是「吃灰」</a></li>
@@ -140,34 +161,22 @@
     <li><b>失效隔离</b>：ASR 云服务挂掉时能回退本地 Whisper——用「降级路径」保住了整条链路的可用性。</li>
   </ul>
   <blockquote>ClipMind 真正的价值不只是「把视频转文字」，而是示范了<strong>一个面向个人的 AI 工具，如何把「必须联网调三方」的产品做成「默认本地、可选云端」</strong>。对想用 RAG 落地私有数据的项目，这套提供方抽象与双路径设计很值得参考。</blockquote>
-
-  <div class="artnav">
-    <a href="700-lines-agent-nanoagent.html"><div class="dir">上一篇</div><div class="nm">← 700 行手写一个 Agent 框架：NanoAgent</div></a>
-    <a href="../index.html"><div class="dir">返回</div><div class="nm">回到文章列表 →</div></a>
-  </div>
-</article>
-
-<aside class="pkcard">
-  <div class="top">
-    <span class="avatar">V</span>
-    <div>
-      <div class="nm">Vanity</div>
-      <div class="rol">RAG · Agent 工程实践者</div>
     </div>
-  </div>
-  <p class="bio">软件工程方向，专注检索增强与大模型 Agent 的工程落地。比起"功能能跑"，更在意可靠、可复现、能现场演示。</p>
-  <h4>关注方向</h4>
-  <div class="tags"><span>RAG</span><span>Agent</span><span>LangGraph</span><span>MCP</span><span>本地大模型</span></div>
-  <h4>更多内容</h4>
-  <div class="links">
-    <a href="../index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>回到文章列表</a>
-    <a href="http://github.com/Vanity-1" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.55v-2.16c-3.2.7-3.87-1.38-3.87-1.38-.52-1.33-1.28-1.68-1.28-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.03 1.75 2.69 1.25 3.34.95.1-.74.4-1.25.72-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.26.45-2.28 1.18-3.09-.12-.29-.51-1.46.11-3.04 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.74 0c2.18-1.49 3.14-1.18 3.14-1.18.63 1.58.24 2.75.12 3.04.73.81 1.17 1.83 1.17 3.09 0 4.42-2.69 5.38-5.25 5.67.41.35.77 1.05.77 2.12v3.14c0 .31.2.67.8.55A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z"/></svg>GitHub：Vanity-1</a>
-  </div>
-</aside>
-</div>
+    <nav class="art-nav">
+      <a href="../index.html#articles">← 回到文章列表</a>
+      <a href="../index.html#guestbook">留言交流 →</a>
+    </nav>
+  </main>
 
-<footer>本站点托管于 GitHub Pages · Code &amp; Craft</footer>
-<button id="topBtn" aria-label="回到顶部"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg></button>
-<script src="../assets/main.js"></script>
+  <footer class="site-footer">
+    <div class="container">
+      <span>© 2026 Code &amp; Craft · 纯前端零构建 · 三主题特效常驻</span>
+      <span>GitHub · <a href="https://github.com/Vanity-1" target="_blank" rel="noopener">Vanity-1</a></span>
+    </div>
+  </footer>
+
+  <script src="../data/articles.js"></script>
+  <script src="../assets/js/fx-core.js"></script>
+  <script src="../assets/js/article.js"></script>
 </body>
 </html>
