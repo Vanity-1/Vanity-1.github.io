@@ -92,6 +92,30 @@ a { color: var(--accent); text-decoration: none; }
 }
 
 /* 留言板 */
+.giscus-wrap { max-width: 760px; margin-bottom: 44px; }
+.gb-label { display: inline-block; font-size: .82rem; font-weight: 700; color: var(--accent);
+  background: var(--tag-bg); border: 1px solid var(--line); padding: 5px 14px;
+  border-radius: 999px; margin-bottom: 16px; }
+.gb-hint { margin-top: 12px; font-size: .85rem; color: var(--text-dim); }
+.gb-hint a { color: var(--accent); }
+.gb-local { border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--bg-card); max-width: 760px; }
+.gb-local summary { cursor: pointer; padding: 16px 20px; font-size: .98rem; font-weight: 600;
+  color: var(--text); list-style: none; user-select: none; display: flex; align-items: center; gap: 10px; }
+.gb-local summary::-webkit-details-marker { display: none; }
+.gb-local summary::after { content: '▸'; margin-left: auto; color: var(--text-dim);
+  transition: transform .25s ease; }
+.gb-local[open] summary::after { transform: rotate(90deg); }
+.gb-count { font-size: .78rem; font-weight: 400; color: var(--text-dim);
+  background: var(--tag-bg); border: 1px solid var(--line); padding: 1px 10px; border-radius: 999px; }
+.gb-local-tip { font-size: .82rem; color: var(--text-dim); padding: 0 20px 14px; max-width: 72ch; }
+.gb-local .gb-form { margin-bottom: 0; }
+.gb-tools { display: flex; justify-content: space-between; align-items: center;
+  gap: 12px; padding: 16px 0 4px; }
+.gb-clear { background: transparent; border: 1px solid var(--line); color: var(--text-dim);
+  font-size: .82rem; padding: 6px 14px; border-radius: 999px; cursor: pointer;
+  transition: border-color .2s, color .2s; }
+.gb-clear:hover { border-color: var(--accent); color: var(--accent); }
 .gb-form { display: flex; flex-direction: column; gap: 12px; max-width: 620px; margin-bottom: 34px; }
 .gb-form input, .gb-form textarea {
   background: var(--bg-card); border: 1px solid var(--line); border-radius: var(--radius);

@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Code &amp; Craft —— 个人技术博客，记录 RAG / Agent 工程实践与前端创意编码，三主题切换、特效共存的纯前端单页。">
   <title>Code &amp; Craft · 个人技术博客</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@400;700&family=JetBrains+Mono:wght@500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
@@ -66,13 +67,28 @@
   <section class="section" id="guestbook">
     <div class="container">
       <h2 class="reveal">留言板</h2>
-      <form id="gbForm" class="gb-form reveal">
-        <input id="gbName" type="text" maxlength="20" placeholder="你的名字（可选）" autocomplete="name">
-        <textarea id="gbText" rows="3" maxlength="500" placeholder="写点什么…对某篇文章的疑问、捉到的 bug，或者只是打个招呼。" required></textarea>
-        <button type="submit" class="like-btn" data-confetti>📮 提交留言</button>
-      </form>
-      <p id="gbEmpty" class="gb-empty reveal">还没有留言，来当第一个吧。</p>
-      <div id="gbList" class="gb-list"></div>
+      <p class="reveal sec-desc">公共留言由 GitHub Discussions 托管：所有访客都能看到，需要 GitHub 账号登录后发言，数据存在 GitHub 服务器而非本机，反垃圾与防注入由 GitHub 负责。下方折叠的「本机速记」只保存在当前浏览器，仅供自己备忘。</p>
+
+      <div class="reveal giscus-wrap">
+        <div class="gb-label">💬 公共留言 · 所有人可见</div>
+        <div id="giscus"></div>
+        <p id="giscusHint" class="gb-hint" hidden>留言系统未能加载：请确认已<a href="https://github.com/apps/giscus" target="_blank" rel="noopener">安装 Giscus 应用</a>，并在仓库 Settings → General 中启用 Discussions。</p>
+      </div>
+
+      <details class="reveal gb-local" id="gbLocal">
+        <summary>📝 本机速记 <span class="gb-count" id="gbCount">0 条</span></summary>
+        <p class="gb-local-tip">只保存在你当前浏览器的 localStorage（key: blog-guestbook）里，其他访客看不到；清缓存、换浏览器或换设备即消失，请勿当作公共留言。</p>
+        <form id="gbForm" class="gb-form" novalidate>
+          <input id="gbName" type="text" maxlength="20" placeholder="昵称（可选）" autocomplete="off">
+          <textarea id="gbText" rows="3" maxlength="500" placeholder="写点什么…仅保存到当前浏览器。" required></textarea>
+          <button type="submit" class="like-btn" data-confetti>📮 保存速记</button>
+        </form>
+        <div class="gb-tools">
+          <span id="gbEmpty" class="gb-empty">还没有速记。</span>
+          <button type="button" id="gbClear" class="gb-clear">🗑 清空本机速记</button>
+        </div>
+        <div id="gbList" class="gb-list"></div>
+      </details>
     </div>
   </section>
 
