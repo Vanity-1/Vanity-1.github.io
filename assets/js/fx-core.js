@@ -87,10 +87,10 @@
     var chars = '!<>-_\\/[]{}=+*^?#01', frame = 0;
     var iv = setInterval(function () {
       var out = '', i;
-      for (i = 0; i < target.length; i++) out += (frame / 14 > i) ? target[i] : chars[(Math.random() * chars.length) | 0];
+      for (i = 0; i < target.length; i++) out += (frame / 7 > i) ? target[i] : chars[(Math.random() * chars.length) | 0];
       el.textContent = out; frame++;
-      if (frame > target.length * 14 + 20) clearInterval(iv);
-    }, 38);
+      if (frame > target.length * 7 + 16) clearInterval(iv);
+    }, 22);
     FX.cleanups.push(function () { clearInterval(iv); el.textContent = target; });
   };
 

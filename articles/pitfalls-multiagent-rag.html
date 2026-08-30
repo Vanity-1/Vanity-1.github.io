@@ -93,7 +93,7 @@ CHROMA_DIR = "vector_db"</code></pre>
 
   <h2 id="s3"><span class="n">3</span>坑二：多知识源的「拼接不等于融合」</h2>
   <p>项目有<strong>商品目录</strong>（catalog_chunks，9288 条）与<strong>政策文档</strong>（policies，8 条）两个向量集合。早期实现是「每个源各取 top-k，然后按源顺序拼接」。</p>
-  <div class="box warn"><span class="bt">问题</span>商品 9288 条、政策 8 条，拼接后商品永远排前面，弱源（政策）的高相关召回被淹没；同一条内容跨源重复召回，上下文噪音多、排序不稳定。完整量化见《<a href="rrf-vs-plain-experiment.html" style="color:var(--cy-soft)">RRF 融合对比实验</a>》。</div>
+  <div class="box warn"><span class="bt">问题</span>商品 9288 条、政策 8 条，拼接后商品永远排前面，弱源（政策）的高相关召回被淹没；同一条内容跨源重复召回，上下文噪音多、排序不稳定。完整量化见《<a href="rrf-vs-plain-experiment.html">RRF 融合对比实验</a>》。</div>
   <p><b>解决</b>：实现 <b>RRF（Reciprocal Rank Fusion）倒数排名融合</b>，聚合多个源的排序信号并天然去重：</p>
   <pre><span class="lbl">agents/tools/rrf_fusion.py</span><code># RRF 核心：按「倒数排名」聚合各源排序
 # score(doc) = Σ_sources  1 / (rank_in_source + K)   # K=60
@@ -134,11 +134,12 @@ from adk.tools import Tool         from google.adk.agents import Agent, Sequenti
     <tr><td>部署</td><td>远程模型依赖外网</td><td>Ollama 本地嵌入 / 生成</td></tr>
   </table></div>
   <p>这些坑的共同点：都是<strong>「能跑但结果不对 / 换环境就挂」</strong>的隐性工程问题，单靠功能测试覆盖不到，需要专门的检索评估与回归测试来兜底。这也是二开这类项目最有价值的部分——不只是把功能做出来，而是把<strong>可靠性</strong>夯实。</p>
-  <blockquote>下一篇实验看具体数据：同样是这些查询，RRF 融合如何把政策相关文档从「完全被淹没」提升到第 2 位？<a href="rrf-vs-plain-experiment.html" style="color:var(--cy-soft)">阅读对比实验 →</a></blockquote>
+  <blockquote>下一篇实验看具体数据：同样是这些查询，RRF 融合如何把政策相关文档从「完全被淹没」提升到第 2 位？<a href="rrf-vs-plain-experiment.html">阅读对比实验 →</a></blockquote>
     </div>
     <nav class="art-nav">
-      <a href="../index.html#articles">← 回到文章列表</a>
-      <a href="../index.html#guestbook">留言交流 →</a>
+      <a id="nav-prev" href="#"></a>
+      <a href="../index.html#articles">返回主页</a>
+      <a id="nav-next" href="#"></a>
     </nav>
   </main>
 

@@ -1,11 +1,13 @@
-/* article.js —— 文章详情页逻辑：按文件名定位文章、渲染正文、进度条、主题 UI、富组件动画 */
+/* article.js —— 文章详情页逻辑：按文件名定位文章、渲染正文、进度条、主题 UI、富组件动画、上下篇导航 */
 (function () {
   'use strict';
   var file = location.pathname.split('/').pop();
-  var a = null, i;
-  for (i = 0; i < (window.BLOG_ARTICLES || []).length; i++) {
-    if (window.BLOG_ARTICLES[i].href && window.BLOG_ARTICLES[i].href.split('/').pop() === file) { a = window.BLOG_ARTICLES[i]; break; }
+  var arts = window.BLOG_ARTICLES || [];
+  var a = null, aIndex = -1, i;
+  for (i = 0; i < arts.length; i++) {
+    if (arts[i].href && arts[i].href.split('/').pop() === file) { a = arts[i]; aIndex = i; break; }
   }
+
   if (a) {
     document.title = a.title + ' · Code & Craft';
     var t = document.querySelector('.art-title');
@@ -17,6 +19,19 @@
     /* 页面已有硬编码正文（旧文章页）时跳过注入，避免被精简版数据覆盖 */
     var body = document.getElementById('art-body');
     if (body && !body.innerHTML.trim()) body.innerHTML = a.body;
+
+    /* 上一篇 / 下一篇：按列表顺序生成，边界页不产生无效链接 */
+    var navPrev = document.getElementById('nav-prev'), navNext = document.getElementById('nav-next');
+    function fillNav(el, art, dir) {
+      if (!art) { if (el) el.remove(); return; }
+      el.href = './' + art.href.split('/').pop();
+      el.textContent = dir === 'prev' ? '← ' + art.title : art.title + ' →';
+    }
+    fillNav(navPrev, aIndex > 0 ? arts[aIndex - 1] : null, 'prev');
+    fillNav(navNext, aIndex < arts.length - 1 ? arts[aIndex + 1] : null, 'next');
+  } else {
+    var np = document.getElementById('nav-prev'), nn = document.getElementById('nav-next');
+    if (np) np.remove(); if (nn) nn.remove();
   }
 
   /* 富组件动画：KPI 数字滚动 */
