@@ -71,6 +71,7 @@ a { color: var(--accent); text-decoration: none; }
   background: var(--bg-card); color: var(--text); cursor: pointer; font-size: .95rem;
   transition: transform .18s cubic-bezier(.34,1.56,.64,1), border-color .2s; }
 .like-btn:hover { transform: scale(1.08); border-color: var(--accent); }
+.like-btn.liked { border-color: var(--accent); background: var(--tag-bg); color: var(--accent); }
 .about p { color: var(--text-dim); max-width: 62ch; }
 .site-footer { border-top: 1px solid var(--line); padding: 34px 0; color: var(--text-dim); font-size: .85rem; }
 .site-footer .container { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }

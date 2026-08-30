@@ -38,12 +38,28 @@
     update();
   }
 
-  /* 点赞计数（彩带爆炸由 FX 绑定 [data-confetti]，两监听器共存） */
+  /* 点赞计数（彩带爆炸由 FX 绑定 [data-confetti]，两监听器共存）
+   * 状态持久化：localStorage 存增量与已点赞标记，刷新不重置；同一浏览器仅计一次、可取消 */
   function initLike() {
-    var btn = document.getElementById('likeBtn'), n = 128;
+    var btn = document.getElementById('likeBtn');
+    var BASE = 128, KEY = 'blog-like';
+    var st = { n: 0, liked: false };
+    try {
+      var v = JSON.parse(localStorage.getItem(KEY));
+      if (v && typeof v.n === 'number' && typeof v.liked === 'boolean') st = { n: Math.max(0, v.n), liked: v.liked };
+    } catch (e) { /* 隐私模式降级为仅当前会话 */ }
+    function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
+    function render() {
+      btn.textContent = '👍 有帮助（' + (BASE + st.n) + '）' + (st.liked ? ' · 已助力' : '');
+      btn.classList.toggle('liked', st.liked);
+    }
     btn.addEventListener('click', function () {
-      n++; btn.textContent = '👍 有帮助（' + n + '）';
+      st.liked ? st.n-- : st.n++;
+      st.liked = !st.liked;
+      save();
+      render();
     });
+    render();
   }
 
   /* 留言板：localStorage 持久化，DOM 安全构建（不拼 HTML 字符串） */
