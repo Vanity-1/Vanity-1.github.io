@@ -92,6 +92,7 @@
       try { url = new URL(a.href, location.href); } catch (err) { return; }
       if (url.origin !== location.origin || url.hash) return;
       if (!/\.html?$/i.test(url.pathname) && url.pathname.slice(-1) !== '/') return;
+      if (typeof fetch !== 'function') return;
 
       e.preventDefault();
       var self = { ctrl: window.AbortController ? new AbortController() : null };
