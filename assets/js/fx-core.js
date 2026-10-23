@@ -4,7 +4,7 @@
  *   - FX.applyTheme(theme)：仅更新当前主题（调色板、视差歪斜角度运行时读取），
  *     不销毁、不重启任何特效
  *   - 所有监听器/定时器/raf 注册进 FX.cleanups，仅在页面卸载语义下由 destroy 清理
- * 主题配色影响：粒子颜色、彩带配色、卡片视差附加歪斜（playful）
+ * 主题配色影响：粒子颜色、彩带配色；卡片 3D 视差只在 cyber 生效
  */
 (function () {
   'use strict';
@@ -14,23 +14,26 @@
 
   /* 各主题特效调色板（运行时读取，切主题即时生效） */
   var PARTICLE_COLORS = {
-    cyber:     { dot: '#00F0FF', line: '0,240,255' },
-    playful:   { dot: '#FF5C8A', line: '255,92,138' },
-    editorial: { dot: '#C9A86A', line: '201,168,106' }
+    paper: { dot: '#35586F', line: '53,88,111' },
+    cyber: { dot: '#00F0FF', line: '0,240,255' }
   };
   var CONFETTI_COLORS = {
-    cyber:     ['#00F0FF', '#A000FF', '#FF2EC4', '#4ADE80', '#EAF6FF'],
-    playful:   ['#FF5C8A', '#FFB347', '#A288F5', '#4ADE80', '#38BDF8'],
-    editorial: ['#C9A86A', '#E8D5AE', '#F5F5F0', '#8B8B85', '#A8863E']
+    paper: ['#B23A2A', '#35586F', '#C49A3A', '#4F6F52', '#8A8175'],
+    cyber: ['#00F0FF', '#A000FF', '#FF2EC4', '#4ADE80', '#EAF6FF']
   };
 
   var FX = {
     cleanups: [],
-    theme: 'playful',
-    applyTheme: function (theme) { FX.theme = theme; }
+    theme: 'paper',
+    applyTheme: function (theme) {
+      FX.theme = theme;
+      if (theme !== 'cyber') {
+        document.querySelectorAll('.card').forEach(function (card) { card.style.transform = ''; });
+      }
+    }
   };
 
-  function particlePal() { return PARTICLE_COLORS[FX.theme] || PARTICLE_COLORS.cyber; }
+  function particlePal() { return PARTICLE_COLORS[FX.theme] || PARTICLE_COLORS.paper; }
 
   function on(t, ev, fn, opts) {
     t.addEventListener(ev, fn, opts);
@@ -53,6 +56,8 @@
       if (!running) return;
       ctx.clearRect(0, 0, W, H);
       var pal = particlePal();
+      var paper = FX.theme === 'paper';
+      var lineAlpha = paper ? .2 : .35, dotR = paper ? 1.5 : 1.8;
       var p, a, b, dd, ddx, ddy, dx, dy, d;
       for (i = 0; i < N; i++) {
         p = pts[i]; p.x += p.vx; p.y += p.vy;
@@ -64,12 +69,12 @@
       for (i = 0; i < N; i++) for (var j = i + 1; j < N; j++) {
         a = pts[i]; b = pts[j]; ddx = a.x - b.x; ddy = a.y - b.y; dd = ddx * ddx + ddy * ddy;
         if (dd < 12100) {
-          ctx.strokeStyle = 'rgba(' + pal.line + ',' + (1 - dd / 12100) * .35 + ')';
+          ctx.strokeStyle = 'rgba(' + pal.line + ',' + (1 - dd / 12100) * lineAlpha + ')';
           ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
         }
       }
       ctx.fillStyle = pal.dot;
-      for (i = 0; i < N; i++) { ctx.beginPath(); ctx.arc(pts[i].x, pts[i].y, 1.8, 0, 7); ctx.fill(); }
+      for (i = 0; i < N; i++) { ctx.beginPath(); ctx.arc(pts[i].x, pts[i].y, dotR, 0, 7); ctx.fill(); }
       rafId = requestAnimationFrame(tick);
     }
     on(document, 'visibilitychange', function () {
@@ -120,15 +125,15 @@
     FX.cleanups.push(function () { cancelAnimationFrame(rafId); dots.forEach(function (d) { d.el.remove(); }); });
   };
 
-  /* 鼠标 3D 倾斜视差卡片（全站；playful 主题额外附加轻微歪斜） */
+  /* 鼠标 3D 倾斜视差卡片（仅 cyber；paper 保持纸片的安静） */
   FX.tilt = function (cards) {
     if (!finePointer) return;
     cards.forEach(function (card) {
       function move(e) {
+        if (FX.theme !== 'cyber') { card.style.transform = ''; return; }
         var r = card.getBoundingClientRect();
         var x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5;
-        var twist = FX.theme === 'playful' ? ' rotate(-1deg)' : '';
-        card.style.transform = 'perspective(700px) rotateX(' + (-y * 10) + 'deg) rotateY(' + (x * 10) + 'deg) translateY(-4px)' + twist;
+        card.style.transform = 'perspective(700px) rotateX(' + (-y * 10) + 'deg) rotateY(' + (x * 10) + 'deg) translateY(-4px)';
       }
       function leave() { card.style.transform = ''; }
       on(card, 'mousemove', move); on(card, 'mouseleave', leave);
@@ -140,7 +145,7 @@
   FX.confetti = function (btn) {
     if (!btn) return;
     on(btn, 'click', function (e) {
-      var colors = CONFETTI_COLORS[FX.theme] || CONFETTI_COLORS.playful;
+      var colors = CONFETTI_COLORS[FX.theme] || CONFETTI_COLORS.paper;
       var cx = e.clientX || innerWidth / 2, cy = e.clientY || innerHeight / 2, i;
       for (i = 0; i < 28; i++) {
         var p = document.createElement('div');

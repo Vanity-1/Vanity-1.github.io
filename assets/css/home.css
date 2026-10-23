@@ -9,10 +9,10 @@
 .hero-stat .l { font-size: .76rem; color: var(--text-dim); margin-top: 2px; }
 
 .labs-section { padding-top: 36px; }
-.lab-head { display: flex; justify-content: space-between; align-items: end; gap: 22px; margin-bottom: 24px; }
+.lab-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 22px; margin-bottom: 24px; }
 .lab-head h2 { margin-bottom: 8px; }
 .eyebrow { font-family: var(--font-mono); font-size: .7rem; letter-spacing: .16em; color: var(--accent); text-transform: uppercase; margin-bottom: 9px; }
-.lab-all { flex: 0 0 auto; font-size: .86rem; color: var(--accent); border-bottom: 1px solid var(--accent); padding-bottom: 2px; white-space: nowrap; }
+.lab-all { flex: 0 0 auto; margin-top: 6px; font-size: .86rem; color: var(--accent); border-bottom: 1px solid var(--accent); padding-bottom: 2px; white-space: nowrap; }
 
 .lab-showcase { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
 .showcase-card { display: flex; flex-direction: column; gap: 11px; background: var(--bg-card); border: 1px solid var(--line);

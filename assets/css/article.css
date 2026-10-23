@@ -1,4 +1,4 @@
-/* article.css —— 文章详情页排版（颜色全部走主题变量，三主题通用） */
+/* article.css —— 文章详情页排版（颜色全部走主题变量，双主题通用） */
 .art-wrap { max-width: 760px; margin: 0 auto; padding: 60px 0 80px; }
 .art-crumb { font-size: .85rem; color: var(--text-dim); margin-bottom: 18px; }
 .art-crumb a { color: var(--text-dim); }

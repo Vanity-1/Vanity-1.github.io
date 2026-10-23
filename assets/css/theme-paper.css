@@ -1,0 +1,77 @@
+/* 风格 A：纸面笔记（亮色默认）
+ * 暖纸底、墨色正文、朱红标点；衬线标题 + 无衬线正文。
+ * 特效由 fx-core.js 的 paper 调色板提供，本文件只负责配色与版面装饰。 */
+[data-theme='paper'] {
+  color-scheme: light;
+  --bg: #F5F0E6;
+  --bg-header: rgba(245, 240, 230, .9);
+  --bg-card: #FCF9F2;
+  --line: #DCD3C4;
+  --text: #1B1814;
+  --text-dim: #615A4F;
+  --accent: #B23A2A;
+  --accent-2: #35586F;
+  --accent-contrast: #FFF9F1;
+  --tag-bg: #EFE6D7;
+  --code-bg: #201C17;
+  --code-text: #F3EDE1;
+  --code-inline-bg: #EBDFCC;
+  --radius: 4px;
+  --glow: 0 12px 28px rgba(27, 24, 20, .09);
+  --font-display: 'Newsreader', 'Songti SC', 'STSong', 'SimSun', Georgia, serif;
+  --font-body: 'Inter', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', Consolas, monospace;
+}
+[data-theme='paper'] body { letter-spacing: .005em; }
+[data-theme='paper'] .logo { font-family: var(--font-mono); font-weight: 700; letter-spacing: -.05em; color: var(--text); }
+[data-theme='paper'] .logo::after { content: '.'; color: var(--accent); }
+[data-theme='paper'] .site-nav a { font-size: .9rem; }
+[data-theme='paper'] .theme-switch button.active { color: var(--accent-contrast); }
+
+/* 首屏：纸纹、朱红书脊、衬线大标题 */
+[data-theme='paper'] .hero {
+  background-image: radial-gradient(rgba(27, 24, 20, .055) .7px, transparent .8px);
+  background-size: 22px 22px;
+}
+[data-theme='paper'] .hero h1 {
+  letter-spacing: -.035em;
+  border-left: 6px solid var(--accent);
+  padding-left: clamp(14px, 2vw, 22px);
+}
+[data-theme='paper'] .hero .sub { max-width: 56ch; }
+[data-theme='paper'] .lab-hero h1 { border-left: 5px solid var(--accent); padding-left: 16px; letter-spacing: -.02em; }
+[data-theme='paper'] .cta { box-shadow: none; }
+[data-theme='paper'] .cta:hover { box-shadow: 0 10px 22px rgba(178, 58, 42, .18); }
+
+/* 卡片：安静的纸片，不做玻璃与霓虹 */
+[data-theme='paper'] .card { box-shadow: 0 1px 0 rgba(27, 24, 20, .04); }
+[data-theme='paper'] .card:hover { transform: translateY(-4px); box-shadow: var(--glow); }
+[data-theme='paper'] .card.reveal {
+  transition: opacity .6s ease, transform .25s ease, box-shadow .25s, border-color .25s;
+}
+[data-theme='paper'] .showcase-card:hover { transform: translateY(-4px); }
+[data-theme='paper'] .tag { font-family: var(--font-mono); font-weight: 500; border-radius: 2px; }
+[data-theme='paper'] .section h2 { letter-spacing: -.02em; }
+[data-theme='paper'] .section h2::before {
+  content: ''; display: inline-block; width: 18px; height: 2px;
+  margin-right: 12px; vertical-align: .32em; background: var(--accent);
+}
+[data-theme='paper'] #progress { height: 3px; background: linear-gradient(90deg, var(--accent), #D98C7C); }
+
+/* 文章页：标题左侧书脊，正文保持长文阅读的呼吸 */
+[data-theme='paper'] .art-title {
+  letter-spacing: -.02em;
+  border-left: 4px solid var(--accent);
+  padding-left: 18px;
+}
+[data-theme='paper'] .art-body h2 { border-left-width: 2px; }
+[data-theme='paper'] .art-body blockquote { border-left-width: 2px; }
+[data-theme='paper'] .toc { border-left-width: 2px; }
+[data-theme='paper'] .lab-panel { box-shadow: none; }
+[data-theme='paper'] ::selection { background: rgba(178, 58, 42, .18); }
+
+@media (max-width: 640px) {
+  [data-theme='paper'] .hero h1 { border-left-width: 4px; }
+  [data-theme='paper'] .lab-hero h1 { border-left-width: 4px; padding-left: 12px; }
+  [data-theme='paper'] .art-title { border-left-width: 3px; padding-left: 14px; }
+}

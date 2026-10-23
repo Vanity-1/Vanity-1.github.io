@@ -76,7 +76,7 @@ a { color: var(--accent); text-decoration: none; }
 .site-footer { border-top: 1px solid var(--line); padding: 34px 0; color: var(--text-dim); font-size: .85rem; }
 .site-footer .container { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
 
-/* 滚动进度条（三主题各自装饰：糖果条纹 / 霓虹发光 / 金色细线） */
+/* 滚动进度条（双主题各自装饰：朱红细线 / 霓虹渐变） */
 #progress { position: fixed; top: 0; left: 0; height: 4px; width: 0; z-index: 99;
   background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
 
@@ -141,7 +141,7 @@ a { color: var(--accent); text-decoration: none; }
 .fx-trail-dot { position: fixed; width: 10px; height: 10px; border-radius: 50%; pointer-events: none;
   z-index: 9999; background: var(--accent-2); box-shadow: 0 0 12px var(--accent-2); }
 
-/* 彩带碎片（playful） */
+/* 彩带碎片（双主题共用，配色随调色板） */
 .fx-confetti { position: fixed; width: 8px; height: 8px; pointer-events: none; z-index: 9999; }
 
 /* ============ View Transitions ============ */
@@ -152,7 +152,7 @@ a { color: var(--accent); text-decoration: none; }
   from { clip-path: circle(0px at var(--vt-x, 50%) var(--vt-y, 50%)); }
   to   { clip-path: circle(150% at var(--vt-x, 50%) var(--vt-y, 50%)); }
 }
-/* cyber↔editorial 强化过渡：glitch 模式
+/* paper→cyber 强化过渡：glitch 模式
  * 切片抖动（clip-path inset 露出旧快照形成错位）+ 亮度/对比度爆闪。
  * 由 theme-switch.js 在过渡期间设置 html[data-vt-mode='glitch']。 */
 html[data-vt-mode='glitch'] ::view-transition-new(root) {
@@ -181,12 +181,6 @@ html[data-vt-mode='glitch'] ::view-transition-new(root) {
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.4'/%3E%3C/svg%3E"),
     repeating-linear-gradient(0deg, rgba(0, 240, 255, .3) 0 2px, transparent 2px 5px),
     radial-gradient(ellipse at 50% 42%, rgba(0, 240, 255, .55), rgba(160, 0, 255, .28) 55%, transparent 78%);
-}
-#vt-flash.to-editorial {
-  background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.4'/%3E%3C/svg%3E"),
-    repeating-linear-gradient(0deg, rgba(255, 248, 230, .24) 0 2px, transparent 2px 5px),
-    radial-gradient(ellipse at 50% 46%, rgba(255, 248, 230, .6), rgba(201, 168, 106, .28) 55%, transparent 78%);
 }
 @keyframes vt-flash {
   0%   { opacity: 0; }

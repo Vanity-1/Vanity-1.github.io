@@ -1,19 +1,15 @@
-/* lab.css —— 项目实验室：共享布局、控件、表格与状态色（三主题通用） */
+/* lab.css —— 项目实验室：共享布局、控件、表格与状态色（双主题通用） */
 .lab-wrap { max-width: 1120px; margin: 0 auto; padding: 48px 0 84px; }
 .lab-wrap .container { padding: 0 24px; }
 
-/* 语义色：三套主题各给一组，避免在暗色主题里读不清 */
-[data-theme='playful'] {
-  --lab-ok: #21895a; --lab-bad: #c92a5a; --lab-warn: #9a6500;
-  --lab-ok-bg: #e9f7ef; --lab-bad-bg: #fde8ee; --lab-warn-bg: #fff4e0;
+/* 语义色：两套主题各给一组，避免在暗色主题里读不清 */
+[data-theme='paper'] {
+  --lab-ok: #2F6B4F; --lab-bad: #B23A2A; --lab-warn: #8A6500;
+  --lab-ok-bg: #E8F1EA; --lab-bad-bg: #F8E7E2; --lab-warn-bg: #F5EEDC;
 }
 [data-theme='cyber'] {
   --lab-ok: #3ef2b0; --lab-bad: #ff4d7d; --lab-warn: #ffc857;
   --lab-ok-bg: rgba(62, 242, 176, .1); --lab-bad-bg: rgba(255, 77, 125, .12); --lab-warn-bg: rgba(255, 200, 87, .12);
-}
-[data-theme='editorial'] {
-  --lab-ok: #8fbf9a; --lab-bad: #d98a7a; --lab-warn: #c9a86a;
-  --lab-ok-bg: rgba(143, 191, 154, .1); --lab-bad-bg: rgba(217, 138, 122, .12); --lab-warn-bg: rgba(201, 168, 106, .12);
 }
 
 .lab-hero { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(260px, .65fr); gap: 28px; align-items: end; margin-bottom: 28px; }
