@@ -45,6 +45,82 @@
     els.forEach(function (el) { io.observe(el); });
   }
 
+  /* 站内文章/实验页跳转：GitHub Pages 在部分网络下首字节要等十几秒，
+     浏览器在这段时间只留一个空白页，看起来像卡死。这里先留在原页显示进度，
+     fetch 目标 HTML 预热缓存后再跳转，正常网络下无感。 */
+  function initNavFeedback() {
+    var pending = null, uiTimer = null, box = null;
+
+    function ui() {
+      if (box) return box;
+      box = document.createElement('div');
+      box.className = 'nav-pending';
+      box.innerHTML =
+        '<div class="nav-pending-bar" aria-hidden="true"></div>' +
+        '<div class="nav-pending-toast" role="status" aria-live="polite">' +
+          '<span class="nav-spinner" aria-hidden="true"></span>' +
+          '<span class="nav-pending-text">正在打开…</span>' +
+          '<button type="button" class="nav-pending-cancel">取消</button>' +
+        '</div>';
+      box.querySelector('.nav-pending-cancel').addEventListener('click', function () {
+        if (pending && pending.ctrl) pending.ctrl.abort();
+        reset();
+      });
+      document.body.appendChild(box);
+      return box;
+    }
+
+    function show(text) {
+      var o = ui();
+      o.querySelector('.nav-pending-text').textContent = text ? '正在打开：' + text : '正在打开…';
+      o.classList.add('on');
+    }
+
+    function reset() {
+      pending = null;
+      clearTimeout(uiTimer);
+      if (box) box.classList.remove('on');
+    }
+
+    document.addEventListener('click', function (e) {
+      if (pending || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+      if (!a || (a.target && a.target !== '_self') || a.hasAttribute('download')) return;
+      var href = a.getAttribute('href');
+      if (/^(mailto|tel|javascript):/i.test(href)) return;
+      var url;
+      try { url = new URL(a.href, location.href); } catch (err) { return; }
+      if (url.origin !== location.origin || url.hash) return;
+      if (!/\.html?$/i.test(url.pathname) && url.pathname.slice(-1) !== '/') return;
+
+      e.preventDefault();
+      var self = { ctrl: window.AbortController ? new AbortController() : null };
+      pending = self;
+      var text = (a.textContent || '').trim();
+      uiTimer = setTimeout(function () { show(text); }, 120);
+      fetch(url.href, {
+        credentials: 'same-origin',
+        signal: self.ctrl ? self.ctrl.signal : undefined
+      })
+        .then(function (res) {
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          return res.text();
+        })
+        .then(function () {
+          if (pending !== self) return;
+          location.assign(url.href);
+        })
+        .catch(function (err) {
+          if (err && err.name === 'AbortError') return;
+          if (pending !== self) return;
+          reset();
+          location.assign(url.href);
+        });
+    }, true);
+
+    addEventListener('pageshow', reset);
+  }
+
   function initCopyButtons() {
     document.querySelectorAll('[data-copy-target]').forEach(function (btn) {
       btn.addEventListener('click', function () {
@@ -86,4 +162,5 @@
   if (window.ThemeSwitch) initThemeButtons();
   initReveal();
   initCopyButtons();
+  initNavFeedback();
 })();

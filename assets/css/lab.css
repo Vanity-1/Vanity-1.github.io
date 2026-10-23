@@ -164,6 +164,49 @@
 .lab-footer-note { margin-top: 26px; color: var(--text-dim); font-size: .8rem; }
 .lab-footer-note a { border-bottom: 1px solid var(--accent); }
 
+.nav-pending {
+  position: fixed; inset: 0; z-index: 9999; pointer-events: none;
+  opacity: 0; visibility: hidden;
+  transition: opacity .15s ease, visibility .15s;
+}
+.nav-pending.on { opacity: 1; visibility: visible; }
+.nav-pending-bar {
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  background-size: 40% 100%; background-repeat: no-repeat;
+  animation: nav-slide 1.1s linear infinite;
+}
+.nav-pending-toast {
+  position: absolute; bottom: 24px; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 10px;
+  max-width: calc(100vw - 32px); padding: 9px 14px;
+  border: 1px solid var(--line); border-radius: 999px;
+  background: var(--bg-card); color: var(--text);
+  box-shadow: var(--glow); font-size: .85rem;
+  pointer-events: auto;
+}
+.nav-pending-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nav-pending-cancel {
+  flex: none; padding: 0; border: 0; background: transparent;
+  color: var(--text-dim); font: inherit; cursor: pointer;
+  text-decoration: underline; text-underline-offset: 2px;
+}
+.nav-pending-cancel:hover { color: var(--accent); }
+.nav-spinner {
+  flex: none; width: 15px; height: 15px; border-radius: 50%;
+  border: 2px solid var(--line); border-top-color: var(--accent);
+  animation: nav-spin .8s linear infinite;
+}
+@keyframes nav-spin { to { transform: rotate(360deg); } }
+@keyframes nav-slide { from { background-position: -40% 0; } to { background-position: 140% 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .nav-spinner { animation-duration: 2.4s; }
+  .nav-pending-bar { animation: none; background: var(--accent); }
+}
+@media (max-width: 480px) {
+  .nav-pending-toast { bottom: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); font-size: .8rem; padding: 8px 12px; }
+}
+
 @media (max-width: 900px) {
   .lab-hero, .lab-grid, .lab-split { grid-template-columns: minmax(0, 1fr); }
 }
