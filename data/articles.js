@@ -3,6 +3,27 @@
  * body 为文章正文（HTML 片段）；href 为详情页链接，点击卡片时跳转 */
 window.BLOG_ARTICLES = [
   {
+    id: 'ai-gateway', title: '给 AI 的 SQL 加一道安检门：预算、护栏与可审计的网关',
+    date: '2026-10-24', readMin: 12, tags: ['AI 治理', 'Text-to-SQL', 'FastAPI', '安全'],
+    href: 'articles/ai-gateway.html',
+    excerpt: '同一个网关管两件事：钱和 SQL 安全。预算桶挡住 key 泄露后的账单，AST 重新生成挡住模型夹带的语句，行级权限和列级掩码落在执行路径上。文末给出 466 条测试与未上线边界。',
+    body: ''
+  },
+  {
+    id: 'recon-engine', title: '对账引擎为什么先配对、后比金额：分层确定性匹配的工程实现',
+    date: '2026-10-24', readMin: 11, tags: ['支付系统', '对账', '算法', 'Python'],
+    href: 'articles/recon-engine.html',
+    excerpt: '先比金额会把一笔金额不符拆成两条单边差异，误报翻倍。L1/L2/L3 分层、双向唯一、差异归因和注入 200 条已知差错的回归，一起拆开讲。',
+    body: ''
+  },
+  {
+    id: 'aigc-label', title: '给 AI 生成内容打上可核验的来源标签：AIGC 七字段与哈希链台账',
+    date: '2026-10-24', readMin: 10, tags: ['AIGC', '合规', '哈希链', '数字水印'],
+    href: 'articles/aigc-label.html',
+    excerpt: '往 PNG 的 iTXt 块写七字段、立刻读回核验，再用只追加哈希链记录每次落标与核验。文件内证明“谁生成的”，文件外证明“记录有没有被动过”。',
+    body: ''
+  },
+  {
     id: 'fusion-three-theme', title: '一个页面装下三种风格：三主题切换、特效共存与零构建部署',
     date: '2026-08-28', readMin: 10, tags: ['前端', '动效', 'View Transitions', '零构建'],
     href: 'articles/fusion-three-theme.html',

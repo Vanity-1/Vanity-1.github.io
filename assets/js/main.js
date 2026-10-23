@@ -22,7 +22,7 @@
 
   function renderAboutTags() {
     document.getElementById('aboutTags').innerHTML =
-      ['RAG', 'Agent', 'LangGraph', 'MCP', 'Python', 'FastAPI', 'CSS', 'Canvas', '动效设计']
+      ['RAG', 'Agent', 'LangGraph', 'MCP', 'Python', 'FastAPI', 'Text-to-SQL', '支付对账', 'AIGC 合规', 'Web Crypto', 'CSS', 'Canvas']
         .map(function (t) { return '<span class="tag">' + t + '</span>'; }).join('');
   }
 

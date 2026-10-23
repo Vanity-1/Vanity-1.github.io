@@ -1,0 +1,54 @@
+/* home.css —— 首页新增的首屏数据条与项目实验室区块 */
+.hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+.hero-actions .cta { margin-top: 0; }
+.hero-actions .cta.ghost { background: transparent; border: 1px solid var(--line); color: var(--text); }
+.hero-actions .cta.ghost:hover { border-color: var(--accent); color: var(--accent); box-shadow: none; }
+
+.hero-stats { display: flex; flex-wrap: wrap; gap: 34px; margin-top: 42px; }
+.hero-stat .v { font-family: var(--font-mono); font-size: 1.45rem; font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; line-height: 1.2; }
+.hero-stat .l { font-size: .76rem; color: var(--text-dim); margin-top: 2px; }
+
+.labs-section { padding-top: 36px; }
+.lab-head { display: flex; justify-content: space-between; align-items: end; gap: 22px; margin-bottom: 24px; }
+.lab-head h2 { margin-bottom: 8px; }
+.eyebrow { font-family: var(--font-mono); font-size: .7rem; letter-spacing: .16em; color: var(--accent); text-transform: uppercase; margin-bottom: 9px; }
+.lab-all { flex: 0 0 auto; font-size: .86rem; color: var(--accent); border-bottom: 1px solid var(--accent); padding-bottom: 2px; white-space: nowrap; }
+
+.lab-showcase { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.showcase-card { display: flex; flex-direction: column; gap: 11px; background: var(--bg-card); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 22px; color: var(--text); position: relative; overflow: hidden;
+  transition: transform .24s cubic-bezier(.34,1.56,.64,1), border-color .2s, box-shadow .2s; }
+.showcase-card:hover { transform: translateY(-5px); border-color: var(--accent); box-shadow: var(--glow); }
+.sc-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.sc-no { font-family: var(--font-mono); font-size: .68rem; letter-spacing: .1em; color: var(--accent); }
+.sc-status { font-size: .66rem; color: var(--text-dim); border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
+.showcase-card h3 { font-family: var(--font-display); font-size: 1.08rem; line-height: 1.4; }
+.sc-desc { color: var(--text-dim); font-size: .84rem; line-height: 1.65; flex: 1; }
+.sc-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.sc-links { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 2px; font-size: .82rem; }
+.sc-links a { color: var(--text-dim); }
+.sc-links a:hover { color: var(--accent); }
+.sc-links .sc-open { color: var(--accent); font-weight: 700; border-bottom: 1px solid var(--accent); }
+
+.sc-mini { height: 46px; display: flex; align-items: center; gap: 5px; border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; background: var(--bg); }
+.gateway-mini i { display: block; height: 8px; width: var(--w); border-radius: 999px; background: var(--accent); opacity: .8; }
+.gateway-mini i:nth-child(2) { background: var(--accent-2); }
+.gateway-mini i.warn { background: var(--lab-warn, #c98a00); }
+.recon-mini { display: grid; gap: 5px; height: auto; padding: 8px 10px; }
+.mini-pair { display: grid; grid-template-columns: 22px minmax(0, 1fr) 14px; gap: 7px; align-items: center; font-family: var(--font-mono); font-size: .62rem; color: var(--text-dim); }
+.mini-pair b { display: block; height: 5px; width: var(--w); border-radius: 999px; background: var(--accent); opacity: .75; }
+.mini-pair em { font-style: normal; color: var(--accent); text-align: right; }
+.chain-mini { justify-content: space-between; }
+.chain-mini i { flex: 1; height: 16px; border-radius: 4px; background: var(--tag-bg); border: 1px solid var(--accent); position: relative; }
+.chain-mini i::after { content: '→'; position: absolute; right: -10px; top: -2px; font-size: 9px; color: var(--accent); }
+.chain-mini i:last-child::after { content: ''; }
+
+@media (max-width: 960px) {
+  .lab-showcase { grid-template-columns: minmax(0, 1fr); }
+  .lab-head { align-items: start; flex-direction: column; gap: 12px; }
+}
+@media (max-width: 640px) {
+  .hero-stats { gap: 18px 26px; margin-top: 30px; }
+  .hero-actions .cta { flex: 1 1 auto; text-align: center; }
+  .showcase-card { padding: 18px; }
+}

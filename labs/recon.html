@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="playful">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="支付对账引擎交互实验：同一批流水，先配对后判定与先比金额会得到两套差异清单；亲手跑 L1/L2/L3 分层匹配。">
+  <title>支付对账实验 · Code &amp; Craft</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧪</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@400;700&family=JetBrains+Mono:wght@500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@400;700&family=JetBrains+Mono:wght@500;700&family=Inter:wght@400;600&display=swap"><style>.reveal{opacity:1!important;transform:none!important}</style></noscript>
+  <link rel="stylesheet" href="../assets/css/base.css?v=20261024c">
+  <link rel="stylesheet" href="../assets/css/lab.css?v=20261024c">
+  <link rel="stylesheet" href="../assets/css/theme-playful.css?v=20261024c">
+  <link rel="stylesheet" href="../assets/css/theme-cyber.css?v=20261024c">
+  <link rel="stylesheet" href="../assets/css/theme-editorial.css?v=20261024c">
+  <script src="../assets/js/theme-switch.js?v=20261024c"></script>
+</head>
+<body>
+  <div id="progress"></div>
+
+  <header class="site-header">
+    <div class="container inner">
+      <a class="logo" href="../index.html#top">&lt;Code/&gt;Craft</a>
+      <nav class="site-nav">
+        <a href="../index.html#articles">文章</a>
+        <a href="index.html">实验室</a>
+        <a href="../index.html#interact">互动</a>
+        <a href="../index.html#guestbook">留言</a>
+        <a href="../index.html#about">关于</a>
+        <a href="https://github.com/Vanity-1" target="_blank" rel="noopener">GitHub</a>
+      </nav>
+      <div class="theme-switch">
+        <button data-theme-btn="playful" title="奇趣互动派">🎨</button>
+        <button data-theme-btn="cyber" title="赛博暗色派">⚡</button>
+        <button data-theme-btn="editorial" title="极简编辑派">✒️</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="lab-wrap">
+    <div class="container">
+      <div class="lab-hero reveal">
+        <div>
+          <div class="lab-kicker">LAB 02 · RECONCILIATION</div>
+          <h1>同一批流水，两种匹配顺序</h1>
+          <p>对账的第一步不是“比金额”，而是“先确认这两笔说的是同一件事”。切换匹配策略，亲手看一笔金额不符如何被拆成两条单边差异；再看看“双向唯一”为什么能让引擎在证据不足时停住。</p>
+          <div class="lab-actions">
+            <a class="lab-btn primary" href="../articles/recon-engine.html">读完整文章</a>
+            <a class="lab-btn" href="index.html">全部实验</a>
+            <a class="lab-btn" href="../index.html#labs">回首页</a>
+          </div>
+        </div>
+        <aside class="lab-side">
+          <div class="t">演示边界</div>
+          <ul>
+            <li>数据集为合成样本，金额以分为单位</li>
+            <li>复刻 L1/L2/L3 与 11 类差异的主干</li>
+            <li>真实项目：324 条测试 + 注入差错语料</li>
+            <li>演示只跑本地 JS，不连接任何数据库</li>
+          </ul>
+        </aside>
+      </div>
+
+      <section class="lab-panel reveal">
+        <h2>匹配策略</h2>
+        <p class="desc">“先配对，后判定”是项目实现的顺序；“先比金额”是常见的反例。切换策略和数据集，点运行。</p>
+        <div class="lab-controls">
+          <div class="lab-field">
+            <label>数据集</label>
+            <div class="lab-chips" id="reconScenes">
+              <button class="lab-btn" data-scene="normal">正常日</button>
+              <button class="lab-btn primary" data-scene="error">差错日</button>
+            </div>
+          </div>
+          <div class="lab-field">
+            <label>匹配策略</label>
+            <div class="lab-chips" id="reconStrategies">
+              <button class="lab-btn primary" data-strategy="strict">先配对，后判定</button>
+              <button class="lab-btn" data-strategy="naive">先比金额</button>
+            </div>
+          </div>
+          <button class="lab-btn primary" id="reconRun">运行匹配</button>
+          <button class="lab-btn" id="reconReset">重置</button>
+        </div>
+        <div class="lab-kpis" id="reconKpis"></div>
+        <div class="lab-note" id="reconNote"></div>
+      </section>
+
+      <section class="lab-panel reveal">
+        <h2>两边的账</h2>
+        <p class="desc">左边是我方流水，右边是渠道账单。配对成功的行会带上同一个 P 编号；单边和异常行会标色。</p>
+        <div class="lab-split">
+          <div>
+            <h3>我方流水（merchant_orders）</h3>
+            <div id="reconLocalTable"></div>
+          </div>
+          <div>
+            <h3>渠道账单（channel_txns）</h3>
+            <div id="reconBillTable"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="lab-panel reveal">
+        <h2>差异与下一步</h2>
+        <p class="desc">差异不是“报个错”就完了；每条都要能回答“接下来找谁”。下面是本次运行产生的差异清单。</p>
+        <div class="lab-findings" id="reconFindings"></div>
+      </section>
+
+      <section class="lab-panel reveal">
+        <h2>两种策略的对照</h2>
+        <p class="desc">只看“差异条数”会骗人：先比金额有时条数差不多，但类型、主体和下一步全错了。这里按差错类型覆盖率做对照。</p>
+        <div id="reconCompare"></div>
+        <p class="lab-note">真实项目的 golden 语料注入 200 条已知差错，要求 recall=1.0、fp=0、fn=0；本页只演示匹配顺序带来的差异，不是完整评测。</p>
+      </section>
+
+      <p class="lab-footer-note reveal">匹配层的完整顺序是 L1a → L1b → L1c → L2a → L2b → L3；L2 只在两侧残差集上跑，且必须双向唯一，否则标 <code class="inline">ambiguous</code> 停住。真实引擎的判据和理由在 <code>src/recon/match/core.py</code> 的模块注释里。</p>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <span>© 2026 Code &amp; Craft · 纯前端零构建 · 三主题特效常驻</span>
+      <span>GitHub · <a href="https://github.com/Vanity-1" target="_blank" rel="noopener">Vanity-1</a></span>
+    </div>
+  </footer>
+
+  <script src="../assets/js/lab.js?v=20261024c"></script>
+  <script src="../assets/js/lab-recon.js?v=20261024c"></script>
+</body>
+</html>

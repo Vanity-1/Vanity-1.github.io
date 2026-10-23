@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="playful">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>文章 · Code &amp; Craft</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@400;700&family=JetBrains+Mono:wght@500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@400;700&family=JetBrains+Mono:wght@500;700&family=Inter:wght@400;600&display=swap"><style>.reveal{opacity:1!important;transform:none!important}</style></noscript>
+  <link rel="stylesheet" href="../assets/css/base.css?v=20261024c">
+  <link rel="stylesheet" href="../assets/css/article.css?v=20261024c">
+  <link rel="stylesheet" href="../assets/css/theme-playful.css?v=20261024c">
+  <link rel="stylesheet" href="../assets/css/theme-cyber.css?v=20261024c">
+  <link rel="stylesheet" href="../assets/css/theme-editorial.css?v=20261024c">
+  <script src="../assets/js/theme-switch.js?v=20261024c"></script>
+</head>
+<body>
+  <div id="progress"></div>
+
+  <header class="site-header">
+    <div class="container inner">
+      <a class="logo" href="../index.html#top">&lt;Code/&gt;Craft</a>
+      <nav class="site-nav">
+        <a href="../index.html#articles" aria-current="page">文章</a>
+        <a href="../index.html#labs">实验室</a>
+        <a href="../index.html#interact">互动</a>
+        <a href="../index.html#guestbook">留言</a>
+        <a href="../index.html#about">关于</a>
+        <a href="https://github.com/Vanity-1" target="_blank" rel="noopener">GitHub</a>
+      </nav>
+      <div class="theme-switch">
+        <button data-theme-btn="playful" title="奇趣互动派">🎨</button>
+        <button data-theme-btn="cyber" title="赛博暗色派">⚡</button>
+        <button data-theme-btn="editorial" title="极简编辑派">✒️</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="art-wrap">
+    <div class="art-crumb"><a href="../index.html">首页</a><span> / 文章</span></div>
+    <h1 class="art-title" id="hero-title"></h1>
+    <div class="art-meta">
+      <span class="avatar">V</span>
+      <span>Vanity</span>
+      <span id="art-date"></span>
+      <span id="art-read"></span>
+      <span id="art-tags"></span>
+    </div>
+    <div class="art-body" id="art-body">
+      <div class="box ok">
+        <div class="bt">先玩一下</div>
+        这篇讲的是项目实现；如果你更想先看它怎么动，打开 <a href="../labs/gateway.html">AI 治理网关实验</a>：调请求速率、看 429 和预算拦截，或者把一条 DELETE 送进护栏。
+      </div>
+
+      <nav class="toc">
+        <div class="t">目录</div>
+        <ul>
+          <li><a href="#s1"><span class="num">1</span>为什么不是“接个模型 API”</a></li>
+          <li><a href="#s2"><span class="num">2</span>一条请求经过什么</a></li>
+          <li><a href="#s3"><span class="num">3</span>护栏：执行 AST 重新生成的那一串</a></li>
+          <li><a href="#s4"><span class="num">4</span>行级权限与列级掩码</a></li>
+          <li><a href="#s5"><span class="num">5</span>预算、限流与 key 泄露</a></li>
+          <li><a href="#s6"><span class="num">6</span>实测、边界与可复现</a></li>
+        </ul>
+      </nav>
+
+      <h2 id="s1"><span class="n">1</span>为什么不是“接个模型 API”</h2>
+      <p>“接个模型 API”本身不难。难的是把它放进企业环境之后，三件会立刻发生的事：</p>
+      <ul>
+        <li><strong>成本没有闸门。</strong> 一把 API Key 被复制出去，第二天就是一张看不懂的账单。你需要的不是“提醒大家省着用”，而是每个租户独立的令牌桶、日/月预算和可回传的单次花费。</li>
+        <li><strong>Text-to-SQL 默认是危险的。</strong> 把自然语言直接变成 SQL 再执行，等于把数据库写权限交给一个会被提示词操纵的模型。只靠关键字黑名单不够，注释、大小写、等价写法都能绕。</li>
+        <li><strong>越权查询看起来像正常查询。</strong> <code>SELECT id, base_salary FROM payroll_runs</code> 语法完全合法。行级权限必须是执行路径上的强制条件，而不是文档里的约定。</li>
+      </ul>
+      <p>这个项目把三件事收进同一条请求路径：模型侧管路由、限流、缓存和成本；数据侧管“模型写出来的 SQL 到底有没有资格被执行”。两边共用鉴权、配额和审计，所以“这次调用花了多少钱”和“这次为什么被拒”能在同一张表里回答。</p>
+
+      <h2 id="s2"><span class="n">2</span>一条请求经过什么</h2>
+      <p>请求路径是刻意排成一条直线的：</p>
+      <pre><code data-lang="text">request_id → edge(日志/指标) → body_limit → auth(key→租户)
+  → policy(令牌桶 / 并发 / 日预算 / 月预算)
+  ├─ POST /v1/chat/completions → 路由打分 → 熔断中的上游不参与 → 上游
+  └─ POST /v1/nl2sql → 目录 + 少样本提示 → 模型给出候选 SQL
+       → 护栏 review_sql → 执行器(mode=ro + 超时 + 行数硬截 + 结果集掩码)
+       → 审计落库</code></pre>
+      <p>被护栏拒绝不是 HTTP 错误：链路完整跑完了，网关给出了一个明确判定，所以状态码是 200、判定在 <code>verdict</code> 里。把它做成 4xx 会让“模型写错了 SQL”和“你没权限”共用一个信号，排障时很难分清。</p>
+
+      <h2 id="s3"><span class="n">3</span>护栏：执行 AST 重新生成的那一串</h2>
+      <p>护栏的核心断言只有一句：<strong>被执行的字符串永远是 AST 重新生成的那一个，不是模型给的那一个。</strong> 所有规则都在判定“要不要给这条 AST 生成执行文本”，而不是扫描原文里的危险关键字。关键字黑名单可以被注释、大小写、等价写法绕过，重新生成不行。</p>
+      <p>规则按优先级跑，两个顺序上的反直觉之处都是被语料逼出来的：</p>
+      <div class="tbl"><table>
+        <tr><th>规则</th><th>做什么</th><th>为什么排在这里</th></tr>
+        <tr><td><code>GRD-000</code></td><td>可解析</td><td>没有 AST，后面任何规则都无从检查</td></tr>
+        <tr><td><code>GRD-001</code></td><td>单语句</td><td>多语句是注入的常见形状</td></tr>
+        <tr><td><code>GRD-002</code></td><td>只允许 SELECT</td><td>写语句在这里就被挡下</td></tr>
+        <tr><td><code>GRD-004</code></td><td>表白名单</td><td><strong>先于</strong>标识符解析：目录里没有 <code>sqlite_master</code>，先跑列解析会把“表不在白名单”误报成“列解析失败”</td></tr>
+        <tr><td><code>GRD-003</code></td><td>标识符可解析</td><td>目录是唯一真相，不借第三方库的错误文案分类</td></tr>
+        <tr><td><code>GRD-005</code></td><td>列白名单</td><td>含 <code>SELECT *</code> 展开；<code>id_card</code> 这种不暴露列到这里才被拒</td></tr>
+        <tr><td><code>GRD-006</code></td><td>函数白名单</td><td>宁可漏放几个合法函数，也不放任何能落盘/读文件的入口</td></tr>
+        <tr><td><code>GRD-007</code></td><td>禁止加锁与写出</td><td><code>FOR UPDATE</code> / <code>SELECT INTO</code> 是锁定读，不是普通 SELECT</td></tr>
+        <tr><td><code>GRD-008</code></td><td>OFFSET 上限</td><td>防止用深分页把数据库拖住</td></tr>
+        <tr><td><code>GRD-009</code></td><td>RLS 谓词注入</td><td>行级权限在这里变成执行计划的一部分</td></tr>
+        <tr><td><code>GRD-010</code></td><td>外层行数上限</td><td>执行器再兜一层硬截</td></tr>
+        <tr><td><code>GRD-011</code></td><td>语句超时</td><td>AST 层判断不了“跑多久”，交给执行器的 progress handler</td></tr>
+      </table></div>
+      <p>放行时返回的 <code>canonical_sql</code> 才是执行文本。模型原文只作为审计证据保留，不直接进数据库。</p>
+
+      <h2 id="s4"><span class="n">4</span>行级权限与列级掩码</h2>
+      <p>行级权限不是“在 WHERE 里碰巧写了 <code>dept_id</code>”，而是护栏按别名给每一个引用了权限键表的 scope 注入谓词。比如租户的 <code>rls_dept_ids = [1]</code>，对 <code>payroll_runs</code> 会生成：</p>
+      <pre><code data-lang="sql">SELECT id, base_salary
+FROM payroll_runs
+WHERE dept_id IN (:rls_0)
+LIMIT 200;</code></pre>
+      <p>参数 <code>:rls_0</code> 的值来自租户行，模型碰不到。没有部门列的表（比如考勤）沿外键路径受限：<code>attendance.employee_id</code> → <code>employees.id</code>，再对 <code>employees.dept_id</code> 注入谓词。所以用户把两张表写成逗号交叉连接、或者写错 ON 条件，都拿不到别人的行。</p>
+      <p>列级掩码作用在<strong>结果值</strong>上，是纯函数、可被审计重放，而不是拼进 SQL。并且沿表达式叶子继承：改名、<code>substr</code>、<code>GROUP_CONCAT</code>、<code>MAX</code> 都拿不到原值。实验里那条 <code>SELECT substr(phone, 1, 3) FROM customer_pii</code> 就是在演示这一点。</p>
+
+      <h2 id="s5"><span class="n">5</span>预算、限流与 key 泄露</h2>
+      <p>每个租户有独立的令牌桶、并发上限和日/月预算。默认演示租户：60 次/分、突发 10 个令牌、日预算 $0.20、月预算 $2.00。请求先过速率与并发，再过预算；超了分别返回 <code>GW-RATE-LIMITED</code>（429）和 <code>GW-BUDGET-DAILY</code>（402）。</p>
+      <p>关键点是：<strong>key 被复制后，调用方和正常用户共享同一套桶与预算</strong>。攻击者能把额度打满，但不能凭空多出一份额度。实验里把速率拉到 120 次/分，60 秒内会同时看到限流和预算拦截——这就是这层闸门存在的意义。</p>
+      <p>本机压测（2026-09-21，无真实厂商 key，1200 条请求）两次独立跑出同一金额：计费 599 条、限流 601 条、花费 <code>$0.004293</code>。这不是生产容量结论，只说明计费与限流两个计数器在同一批请求上能对齐。</p>
+
+      <h2 id="s6"><span class="n">6</span>实测、边界与可复现</h2>
+      <div class="kpis">
+        <div class="kpi"><div class="v">466</div><div class="l">passed（2026-10-23）</div></div>
+        <div class="kpi"><div class="v">18</div><div class="l">skipped（条件不满足的继承闸门）</div></div>
+        <div class="kpi"><div class="v">0</div><div class="l">failed</div></div>
+        <div class="kpi"><div class="v">73s</div><div class="l">本机全套墙钟</div></div>
+      </div>
+      <p>本地已经完成的是：功能闭环、测试全绿、文档与 Dockerfile 收尾。没有完成的是“对外营业”那一半：</p>
+      <ul>
+        <li><strong>没有部署。</strong> 本机没有 Docker 引擎，<code>docker build</code> 与 Railway 命令在部署文档里都自陈“没跑过”，不能写成已验证。</li>
+        <li><strong>没有真实模型 key。</strong> mock 上游能验证路由、计费、护栏和执行链路，但验证不了“真实模型写 SQL 的正确率”。<code>execution_accuracy_pct</code> 这类数只到执行层，不代表模型能力。</li>
+        <li><strong>失败路径的审计归因不完整。</strong> 502/503 路径上 <code>stream</code>、<code>upstream_attempts</code>、<code>model</code> 还是默认值，只能说“能按错误码归因”，不能说“能按模型/流式维度归因”。</li>
+        <li><strong>基准区间只是同一次运行内的下界。</strong> 跨批次漂移没有定位；计时类数字只取带区间的那批，不把单点当精度。</li>
+      </ul>
+      <blockquote>这个项目真正值得讲的一点不是“用了多少库”，而是<strong>把安全边界写进了执行路径</strong>：SQL 不是被扫描后放行，而是被重新生成后执行；权限不是文档约定，而是注入到 AST 里的谓词；花费不是账单出来才知道，而是随响应返回。</blockquote>
+      <p>如果你想把这三层亲手点一遍，去 <a href="../labs/gateway.html">AI 治理网关实验</a>；想看完整测试与边界，项目的 README 和 <code>docs/SECURITY.md</code> 是权威口径。</p>
+    </div>
+    <nav class="art-nav">
+      <a id="nav-prev" href="#"></a>
+      <a href="../index.html#articles">返回主页</a>
+      <a id="nav-next" href="#"></a>
+    </nav>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <span>© 2026 Code &amp; Craft · 纯前端零构建 · 三主题特效常驻</span>
+      <span>GitHub · <a href="https://github.com/Vanity-1" target="_blank" rel="noopener">Vanity-1</a></span>
+    </div>
+  </footer>
+
+  <script src="../data/articles.js?v=20261024c"></script>
+  <script src="../assets/js/fx-core.js?v=20261024c"></script>
+  <script src="../assets/js/article.js?v=20261024c"></script>
+</body>
+</html>

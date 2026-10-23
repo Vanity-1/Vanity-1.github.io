@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="playful">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="项目实验室：AI 治理网关、支付对账引擎、AIGC 标识合规服务，三台可以在浏览器里直接操作的前端工程沙盘。">
+  <title>项目实验室 · Code &amp; Craft</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧪</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@400;700&family=JetBrains+Mono:wght@500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@400;700&family=JetBrains+Mono:wght@500;700&family=Inter:wght@400;600&display=swap"><style>.reveal{opacity:1!important;transform:none!important}</style></noscript>
+  <link rel="stylesheet" href="../assets/css/base.css?v=20261024c">
+  <link rel="stylesheet" href="../assets/css/lab.css?v=20261024c">
+  <link rel="stylesheet" href="../assets/css/theme-playful.css?v=20261024c">
+  <link rel="stylesheet" href="../assets/css/theme-cyber.css?v=20261024c">
+  <link rel="stylesheet" href="../assets/css/theme-editorial.css?v=20261024c">
+  <script src="../assets/js/theme-switch.js?v=20261024c"></script>
+</head>
+<body>
+  <div id="progress"></div>
+
+  <header class="site-header">
+    <div class="container inner">
+      <a class="logo" href="../index.html#top">&lt;Code/&gt;Craft</a>
+      <nav class="site-nav">
+        <a href="../index.html#articles">文章</a>
+        <a href="../index.html#labs" aria-current="page">实验室</a>
+        <a href="../index.html#interact">互动</a>
+        <a href="../index.html#guestbook">留言</a>
+        <a href="../index.html#about">关于</a>
+        <a href="https://github.com/Vanity-1" target="_blank" rel="noopener">GitHub</a>
+      </nav>
+      <div class="theme-switch">
+        <button data-theme-btn="playful" title="奇趣互动派">🎨</button>
+        <button data-theme-btn="cyber" title="赛博暗色派">⚡</button>
+        <button data-theme-btn="editorial" title="极简编辑派">✒️</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="lab-wrap">
+    <div class="container">
+      <div class="lab-hero reveal">
+        <div>
+          <div class="lab-kicker">PROJECT LAB · 03 EXPERIMENTS</div>
+          <h1>三台可以亲手点的工程沙盘</h1>
+          <p>不是截图，也不是录屏。预算闸门、分层对账、AIGC 标识写入与哈希链核验，都能在浏览器里直接操作。规则按项目实现复刻，数据全部是合成的。</p>
+          <div class="lab-actions">
+            <a class="lab-btn primary" href="gateway.html">先玩网关 →</a>
+            <a class="lab-btn" href="recon.html">对账实验</a>
+            <a class="lab-btn" href="aigc.html">AIGC 标识</a>
+          </div>
+        </div>
+        <aside class="lab-side">
+          <div class="t">演示边界</div>
+          <ul>
+            <li>纯前端，无后端、无网络请求</li>
+            <li>数据为合成样本，不是线上实例</li>
+            <li>真实项目测试与边界见对应文章</li>
+            <li>三个项目目前均为本地完成，未上线</li>
+          </ul>
+        </aside>
+      </div>
+
+      <div class="lab-hub">
+        <article class="lab-hub-card reveal">
+          <div class="no">LAB 01 / GATEWAY</div>
+          <h3>预算闸门 + SQL 安检门</h3>
+          <p>把一条 key 的调用速率、日预算和 Text-to-SQL 护栏放在同一张桌面上：先撞限流还是先撞预算，一条 DELETE 会被哪条规则拦下。</p>
+          <div class="lab-chips">
+            <span class="lab-chip">令牌桶</span><span class="lab-chip">GRD-000..011</span><span class="lab-chip">RLS</span>
+          </div>
+          <div class="links">
+            <a href="gateway.html">打开实验</a>
+            <a href="../articles/ai-gateway.html">读文章</a>
+          </div>
+        </article>
+
+        <article class="lab-hub-card reveal">
+          <div class="no">LAB 02 / RECON</div>
+          <h3>先配对，还是先比金额？</h3>
+          <p>同一批流水，两种匹配顺序会得到两套差异清单。亲手跑一遍分层确定性匹配，看看“先比金额”为什么会让误报翻倍。</p>
+          <div class="lab-chips">
+            <span class="lab-chip">L1 / L2 / L3</span><span class="lab-chip">双向唯一</span><span class="lab-chip">差异归因</span>
+          </div>
+          <div class="links">
+            <a href="recon.html">打开实验</a>
+            <a href="../articles/recon-engine.html">读文章</a>
+          </div>
+        </article>
+
+        <article class="lab-hub-card reveal">
+          <div class="no">LAB 03 / AIGC LABEL</div>
+          <h3>把来源标签真正写进 PNG</h3>
+          <p>不是画个假水印：在浏览器里往 PNG 写一条 AIGC 元数据，读回核验、改字段、追加哈希链，亲手把链弄断。</p>
+          <div class="lab-chips">
+            <span class="lab-chip">Web Crypto</span><span class="lab-chip">PNG iTXt</span><span class="lab-chip">哈希链</span>
+          </div>
+          <div class="links">
+            <a href="aigc.html">打开实验</a>
+            <a href="../articles/aigc-label.html">读文章</a>
+          </div>
+        </article>
+      </div>
+
+      <p class="lab-footer-note reveal">所有实验都在浏览器本地运行，不上传文件、不调用接口。项目源码、测试与已知边界在对应文章里；演示中出现的金额、订单号、姓名均为合成数据。</p>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <span>© 2026 Code &amp; Craft · 纯前端零构建 · 三主题特效常驻</span>
+      <span>GitHub · <a href="https://github.com/Vanity-1" target="_blank" rel="noopener">Vanity-1</a></span>
+    </div>
+  </footer>
+
+  <script src="../assets/js/lab.js?v=20261024c"></script>
+</body>
+</html>

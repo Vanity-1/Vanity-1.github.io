@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="playful">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>文章 · Code &amp; Craft</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@400;700&family=JetBrains+Mono:wght@500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@400;700&family=JetBrains+Mono:wght@500;700&family=Inter:wght@400;600&display=swap"><style>.reveal{opacity:1!important;transform:none!important}</style></noscript>
+  <link rel="stylesheet" href="../assets/css/base.css?v=20261024c">
+  <link rel="stylesheet" href="../assets/css/article.css?v=20261024c">
+  <link rel="stylesheet" href="../assets/css/theme-playful.css?v=20261024c">
+  <link rel="stylesheet" href="../assets/css/theme-cyber.css?v=20261024c">
+  <link rel="stylesheet" href="../assets/css/theme-editorial.css?v=20261024c">
+  <script src="../assets/js/theme-switch.js?v=20261024c"></script>
+</head>
+<body>
+  <div id="progress"></div>
+
+  <header class="site-header">
+    <div class="container inner">
+      <a class="logo" href="../index.html#top">&lt;Code/&gt;Craft</a>
+      <nav class="site-nav">
+        <a href="../index.html#articles" aria-current="page">文章</a>
+        <a href="../index.html#labs">实验室</a>
+        <a href="../index.html#interact">互动</a>
+        <a href="../index.html#guestbook">留言</a>
+        <a href="../index.html#about">关于</a>
+        <a href="https://github.com/Vanity-1" target="_blank" rel="noopener">GitHub</a>
+      </nav>
+      <div class="theme-switch">
+        <button data-theme-btn="playful" title="奇趣互动派">🎨</button>
+        <button data-theme-btn="cyber" title="赛博暗色派">⚡</button>
+        <button data-theme-btn="editorial" title="极简编辑派">✒️</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="art-wrap">
+    <div class="art-crumb"><a href="../index.html">首页</a><span> / 文章</span></div>
+    <h1 class="art-title" id="hero-title"></h1>
+    <div class="art-meta">
+      <span class="avatar">V</span>
+      <span>Vanity</span>
+      <span id="art-date"></span>
+      <span id="art-read"></span>
+      <span id="art-tags"></span>
+    </div>
+    <div class="art-body" id="art-body">
+      <div class="box ok">
+        <div class="bt">先玩一下</div>
+        这篇讲标识与台账的设计；想亲手把一条 AIGC 元数据写进 PNG、再把它改坏，打开 <a href="../labs/aigc.html">AIGC 标识实验</a>。浏览器本地计算，不上传文件。
+      </div>
+
+      <nav class="toc">
+        <div class="t">目录</div>
+        <ul>
+          <li><a href="#s1"><span class="num">1</span>问题：重编码之后靠什么证明</a></li>
+          <li><a href="#s2"><span class="num">2</span>七字段与完整性码</a></li>
+          <li><a href="#s3"><span class="num">3</span>8 个承载位与“不重编码像素”</a></li>
+          <li><a href="#s4"><span class="num">4</span>只追加哈希链台账</a></li>
+          <li><a href="#s5"><span class="num">5</span>实测、边界与合规口径</a></li>
+        </ul>
+      </nav>
+
+      <h2 id="s1"><span class="n">1</span>问题：重编码之后靠什么证明</h2>
+      <p>AI 生成内容越来越多，但“这张图是不是 AI 生成的”不能只靠平台自报。隐式标识要解决的是：文件离开生成方之后，还能不能读出<strong>谁生成的、哪一条内容、完整性有没有被动过</strong>。</p>
+      <p>难点在承载位。图片上传到社交平台会被重编码，音频会被转码，PDF 可能被重新导出；写进文件里的标识不保证存活。所以这个项目做两层：</p>
+      <ul>
+        <li><strong>文件内</strong>：往 8 个承载位写七字段隐式标识，写完立刻读回逐字段比对。</li>
+        <li><strong>文件外</strong>：把每次落标/核验记进一条只追加的哈希链台账，用文件指纹和感知哈希召回“同一张图被重编码后的版本”。</li>
+      </ul>
+
+      <h2 id="s2"><span class="n">2</span>七字段与完整性码</h2>
+      <p>标识的字段名与取值来自 GB 45438-2025 的二手公开文档（标准正文不可机器抓取，项目里明确标注了这一点）。核心七字段：</p>
+      <div class="tbl"><table>
+        <tr><th>字段</th><th>含义</th></tr>
+        <tr><td><code>Label</code></td><td>1 = 生成方；2/3 只对传播平台开放</td></tr>
+        <tr><td><code>ContentProducer</code></td><td>内容生成方</td></tr>
+        <tr><td><code>ProduceID</code></td><td>内容 ID</td></tr>
+        <tr><td><code>ReservedCode1</code></td><td>完整性码：<code>SHA256(producer|produceID)[:16]</code></td></tr>
+        <tr><td><code>ContentPropagator</code></td><td>传播方（可选）</td></tr>
+        <tr><td><code>PropagateID</code></td><td>传播 ID（可选）</td></tr>
+        <tr><td><code>ReservedCode2</code></td><td>预留（可选）</td></tr>
+      </table></div>
+      <p>完整性码只覆盖生成方与内容 ID 两个字段，不覆盖整个文件；它回答的是“字段有没有被改”，不是“文件有没有被改”。文件指纹由台账侧的 SHA-256 负责。这两个检查是分开的：改字段会先撞完整性码，改文件字节会先撞台账指纹。</p>
+      <p>还有一个约束：生成方只能写 <code>Label=1</code>。2/3 档只对传播平台开放；生成侧写 2 或 3 等于给自己留一条“疑似也能盖章”的后门。</p>
+
+      <h2 id="s3"><span class="n">3</span>8 个承载位与“不重编码像素”</h2>
+      <p>项目按文件类型分承载位：PNG、JPEG、MP3/音频、PDF、Office 等，共 8 个。PNG 的实现是往 <code>iTXt</code> 块写一条 <code>AIGC:</code> 开头的 JSON，插在 <code>IHDR</code> 之后，其余块字节不动——<strong>不重编码像素</strong>，所以写标识不会让图片画质变化。</p>
+      <pre><code data-lang="text">PNG 签名
+IHDR
+iTXt  ← keyword = "AIGC\0"，文本 = AIGC:{...七字段...}
+IDAT  ← 像素数据，一个字节不动
+IEND</code></pre>
+      <p>写完之后立刻读回，逐字段比对；不一致就记 <code>written_unverified</code>，而不是把可疑产物静默丢掉。不同承载位的字节保真能力不一样，库重写文件的承载位会带 <code>non_byte_exact</code> 风险标记——这是“写入成功”与“字节保真”两件事，不能混着说。</p>
+
+      <h2 id="s4"><span class="n">4</span>只追加哈希链台账</h2>
+      <p>台账的每条记录都包含上一条的 <code>entry_hash</code>，当前条用 <code>seq|prev_hash|字段串</code> 重新算 SHA-256。改中间一条，重算时会在那一条断开；删中间一条也能定位。可识别主体只以 <code>HMAC(pepper, 值)</code> 的摘要进链，删掉 pepper 就等于让这些摘要再也反查不回主体——这是保留期处置能落地、同时链又不允许 UPDATE 的原因。</p>
+      <pre><code data-lang="python">body = "|".join("" if row.get(f) is None else str(row[f]) for f in CHAIN_FIELDS)
+canonical = f"{seq}|{row['prev_hash']}|{body}"
+entry_hash = hashlib.sha256(canonical.encode()).hexdigest()</code></pre>
+      <p>链的边界要写清楚：<strong>哈希链查不出删掉链尾最后几条</strong>，因为链里没有“应当共 N 条”的外部锚点。删中间一条能准确定位；删尾不行。这不是实现缺陷，是只追加链在没有外部见证时的固有限制，项目把它写进了 README，而不是藏起来。</p>
+
+      <h2 id="s5"><span class="n">5</span>实测、边界与合规口径</h2>
+      <div class="kpis">
+        <div class="kpi"><div class="v">170</div><div class="l">passed（2026-10-24 复跑）</div></div>
+        <div class="kpi"><div class="v">14s</div><div class="l">本机全套墙钟</div></div>
+        <div class="kpi"><div class="v">8</div><div class="l">承载位</div></div>
+        <div class="kpi"><div class="v">6/24</div><div class="l">平台重编码后 in-band 存活</div></div>
+      </div>
+      <p>能跑通的是本地闭环：写标识 → 立刻读回 → 进链 → 只读核验 → 批量 zip → 三张演示页；<code>demo_roundtrip.py</code> 走真实 HTTP，14 条判据覆盖无 key 被拒、落标回读一致、篡改检出、zip-slip 拒收、失败行不进链、全量重算链。</p>
+      <p>明确不做的/做不到的：</p>
+      <ul>
+        <li><strong>标识不承诺上传后仍可验。</strong> 平台重编码后 in-band 实测存活 6/24（只有 GIF 扛住 Pillow 重存）；所以上传场景靠台账侧链 + 文件指纹 + pHash 召回（72/72 在阈值内）。</li>
+        <li><strong>限流是进程内的。</strong> 一个 worker 一份账，多副本要换 Redis 或网关层限流。</li>
+        <li><strong>容器没 build 过。</strong> 本机没有 Docker 守护进程，部署文档里明确写了“容器命令未经 build 验证”；跑通的是 uvicorn 直启路径。</li>
+        <li><strong>MP4 一期不做。</strong> 承载位读写靠第三方库，回答的是“写不写得进、读不读得出”，不对真实世界全兼容。</li>
+        <li><strong>标准正文未逐字复核。</strong> 键名与取值来自二手公开文档；任何对外声明前需以正版正文复核。</li>
+      </ul>
+      <p>合规边界也写死在项目里：只做“写标识、核验、留存”，<strong>不剥标识、不去水印、不清洗元数据、不做绕过平台审核的接口</strong>。第十条连“为此提供工具”一起禁止；这不是能力问题，是不做。</p>
+      <blockquote>这个项目真正有意思的地方是<strong>把“证明”拆成两层</strong>：文件内的七字段回答“这条内容是谁生成的”，文件外的哈希链回答“这条记录有没有被动过”。两层都只能证明各自那一段，不能互相冒充。</blockquote>
+      <p>想亲手写一条再把它改坏，去 <a href="../labs/aigc.html">AIGC 标识实验</a>；完整边界在项目的 README 与 <code>docs/retention.md</code>。</p>
+    </div>
+    <nav class="art-nav">
+      <a id="nav-prev" href="#"></a>
+      <a href="../index.html#articles">返回主页</a>
+      <a id="nav-next" href="#"></a>
+    </nav>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <span>© 2026 Code &amp; Craft · 纯前端零构建 · 三主题特效常驻</span>
+      <span>GitHub · <a href="https://github.com/Vanity-1" target="_blank" rel="noopener">Vanity-1</a></span>
+    </div>
+  </footer>
+
+  <script src="../data/articles.js?v=20261024c"></script>
+  <script src="../assets/js/fx-core.js?v=20261024c"></script>
+  <script src="../assets/js/article.js?v=20261024c"></script>
+</body>
+</html>

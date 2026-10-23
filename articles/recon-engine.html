@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="playful">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>文章 · Code &amp; Craft</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@400;700&family=JetBrains+Mono:wght@500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@400;700&family=JetBrains+Mono:wght@500;700&family=Inter:wght@400;600&display=swap"><style>.reveal{opacity:1!important;transform:none!important}</style></noscript>
+  <link rel="stylesheet" href="../assets/css/base.css?v=20261024c">
+  <link rel="stylesheet" href="../assets/css/article.css?v=20261024c">
+  <link rel="stylesheet" href="../assets/css/theme-playful.css?v=20261024c">
+  <link rel="stylesheet" href="../assets/css/theme-cyber.css?v=20261024c">
+  <link rel="stylesheet" href="../assets/css/theme-editorial.css?v=20261024c">
+  <script src="../assets/js/theme-switch.js?v=20261024c"></script>
+</head>
+<body>
+  <div id="progress"></div>
+
+  <header class="site-header">
+    <div class="container inner">
+      <a class="logo" href="../index.html#top">&lt;Code/&gt;Craft</a>
+      <nav class="site-nav">
+        <a href="../index.html#articles" aria-current="page">文章</a>
+        <a href="../index.html#labs">实验室</a>
+        <a href="../index.html#interact">互动</a>
+        <a href="../index.html#guestbook">留言</a>
+        <a href="../index.html#about">关于</a>
+        <a href="https://github.com/Vanity-1" target="_blank" rel="noopener">GitHub</a>
+      </nav>
+      <div class="theme-switch">
+        <button data-theme-btn="playful" title="奇趣互动派">🎨</button>
+        <button data-theme-btn="cyber" title="赛博暗色派">⚡</button>
+        <button data-theme-btn="editorial" title="极简编辑派">✒️</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="art-wrap">
+    <div class="art-crumb"><a href="../index.html">首页</a><span> / 文章</span></div>
+    <h1 class="art-title" id="hero-title"></h1>
+    <div class="art-meta">
+      <span class="avatar">V</span>
+      <span>Vanity</span>
+      <span id="art-date"></span>
+      <span id="art-read"></span>
+      <span id="art-tags"></span>
+    </div>
+    <div class="art-body" id="art-body">
+      <div class="box ok">
+        <div class="bt">先玩一下</div>
+        这篇讲匹配顺序为什么不能反；想亲手切换“先配对”和“先比金额”，打开 <a href="../labs/recon.html">支付对账实验</a>。同一批流水会跑出两套差异清单。
+      </div>
+
+      <nav class="toc">
+        <div class="t">目录</div>
+        <ul>
+          <li><a href="#s1"><span class="num">1</span>对账不是“找不同”</a></li>
+          <li><a href="#s2"><span class="num">2</span>为什么先配对、后比金额</a></li>
+          <li><a href="#s3"><span class="num">3</span>L1 / L2 / L3 的分层</a></li>
+          <li><a href="#s4"><span class="num">4</span>差异归因：下一步找谁</a></li>
+          <li><a href="#s5"><span class="num">5</span>用注入的差错做裁判</a></li>
+          <li><a href="#s6"><span class="num">6</span>实测与边界</a></li>
+        </ul>
+      </nav>
+
+      <h2 id="s1"><span class="n">1</span>对账不是“找不同”</h2>
+      <p>渠道账单和我方流水对不上，是支付系统里每天都会发生的事。真正的工作量不在“发现对不上”，而在三件事：</p>
+      <ul>
+        <li><strong>先确认两笔说的是同一件事。</strong> 商户订单号、渠道流水号、退款单、原单号——键不同，配对结果就不同。</li>
+        <li><strong>把差异分对类。</strong> 金额不符、手续费不符、币种不符、状态冲突、掉单、多单、重复出账、跨日清算、退款无原单……每一类的下一步完全不同。</li>
+        <li><strong>给每条差异一个去处。</strong> 差异没有“下一步找谁”，看板上的 200 条差异就是 200 次要重新想一遍的会议。</li>
+      </ul>
+      <p>这个项目做的是后端闭环：账单入库 → 分层确定性匹配 → 差异带归因 → 工单状态机推到结案，外加渠道回调的验签与防重放。单机一条命令能跑通全流程。</p>
+
+      <h2 id="s2"><span class="n">2</span>为什么先配对、后比金额</h2>
+      <p>假设本地有一笔 100 元的单，渠道账单是 99 元。如果先按“金额相等”匹配，这一对根本配不上，于是变成“本地单边 + 渠道单边”两条差异；原本只是一笔金额不符，现在要两个人分别查。误报直接翻倍。</p>
+      <p>正确的顺序是：先用<strong>业务键</strong>确认“这两笔是同一笔”，再在配对之后判金额、币种、手续费、状态。先配对后判定，一笔金额不符只会产出一条 <code>AMOUNT_MISMATCH</code>，主体明确，下一步也明确。</p>
+      <div class="box warn">
+        <div class="bt">反例的代价</div>
+        在实验里把策略切成“先比金额”，你会看到：差异条数不一定变少，但类型和下一步错了——金额不符被拆成两条单边，跨日清算被当成普通配对，重复出账被当成普通单边。
+      </div>
+
+      <h2 id="s3"><span class="n">3</span>L1 / L2 / L3 的分层</h2>
+      <p>层顺序本身就是设计，不能调：</p>
+      <div class="tbl"><table>
+        <tr><th>层</th><th>键</th><th>说明</th></tr>
+        <tr><td><code>L1a</code></td><td>渠道 + 商户订单号 + 方向</td><td>严格键，命中即配对</td></tr>
+        <tr><td><code>L1b</code></td><td>渠道 + 渠道流水号</td><td>账单里的商户单号被截断时，靠回调回填的流水号救回</td></tr>
+        <tr><td><code>L1c</code></td><td>退款单号 / 原单号 + 等额</td><td>退款行带的是原单号，L1a 配不上它</td></tr>
+        <tr><td><code>L2a</code></td><td>渠道 + 方向 + 金额 + 分钟归一</td><td>只在两侧残差集上跑</td></tr>
+        <tr><td><code>L2b</code></td><td>渠道 + 方向 + 金额 + |Δt| ≤ 90s</td><td>时间窗口更窄，仍要求唯一</td></tr>
+        <tr><td><code>L3</code></td><td>更晚账单文件里的严格键</td><td>跨日清算，报 <code>DATE_SLIP</code></td></tr>
+      </table></div>
+      <p>两个容易写错的细节：</p>
+      <ul>
+        <li><strong>方向必须进键。</strong> 收款 100 元和退款 100 元金额相同，配错了钱就反向。</li>
+        <li><strong>“不猜”的判据是双向唯一。</strong> 一个本地单只看到一个候选行、且那个行也只被这一个本地单看到，才配；任一侧多出候选就标 <code>AMBIGUOUS</code>，并从这个本地单起停止往下走。降级只该发生在证据唯一时。</li>
+      </ul>
+      <p>L3 用清算日而不是时间差判跨日：钱晚一天到账时交易时间通常不变，比 Δt 只会漏。那条行由本轮占走，它自己那天不会再报一次。</p>
+
+      <h2 id="s4"><span class="n">4</span>差异归因：下一步找谁</h2>
+      <p>匹配层回答“这是什么差错”，归因层回答“那接下来找谁”。11 类差异各有稳定的处置码，例如：</p>
+      <div class="tbl"><table>
+        <tr><th>差异</th><th>处置码</th><th>下一步</th></tr>
+        <tr><td>金额不符</td><td><code>RC-AMOUNT-DIVERGED</code></td><td>核对本币应结金额与红包/优惠拆分口径，差额方向以账单为准</td></tr>
+        <tr><td>账单缺行</td><td><code>RC-BILL-ROW-MISSING</code></td><td>向渠道索取该清算日全量账单并核对清算日历</td></tr>
+        <tr><td>跨日清算</td><td><code>RC-SETTLEMENT-DATE-SLIP</code></td><td>核对渠道清算日历，通常无需资金处置</td></tr>
+        <tr><td>重复出账</td><td><code>RC-DUPLICATE-SETTLEMENT</code></td><td>核对是否重复清算，要渠道出账凭证</td></tr>
+        <tr><td>证据不足</td><td><code>RC-EVIDENCE-INSUFFICIENT</code></td><td>补足唯一标识后再配，不许按金额硬猜</td></tr>
+      </table></div>
+      <p>归因是规则表，不是模型：11 类差错的下一步是稳定的制度，不是推理。接缝留给以后真要按证据分支的时候；闸门不认来源，只认结论是否落在词表内、note 是否为空话、severity 是否在档位里。任一条不满足就整条丢掉，按“无归因”落库——带着一个查不到来源的结论落库，比没有结论更危险。</p>
+
+      <h2 id="s5"><span class="n">5</span>用注入的差错做裁判</h2>
+      <p>回归不能靠“跑一遍看起来对”。项目用 <code>scripts/gen_recon_corpus.py</code> 造 30 天 × 2 渠道的语料，10 类差错各注入 20 条，另留一个整日不注入做对照。golden 测试拿引擎结果与已知清单比：</p>
+      <pre><code data-lang="text">injected=200  found=200  recall=1.0000  fp=0  fn=0</code></pre>
+      <p>命中分布也是断言不是打印：该有命中的 <code>L1a/L1b/L3</code> 必须 <code>&gt; 0</code>，这份语料里没有出场机会的 <code>L1c/L2a/L2b</code> 必须 <code>== 0</code>，六层相加必须等于配对数。同 seed 两次运行 manifest 字节相同——这条既是可复现声明，也是脚本自己的自检。</p>
+
+      <h2 id="s6"><span class="n">6</span>实测与边界</h2>
+      <div class="kpis">
+        <div class="kpi"><div class="v">324</div><div class="l">passed（2026-10-23 复跑）</div></div>
+        <div class="kpi"><div class="v">57–60s</div><div class="l">本机全套墙钟区间</div></div>
+        <div class="kpi"><div class="v">11</div><div class="l">类差异</div></div>
+        <div class="kpi"><div class="v">14</div><div class="l">段 curl 闭环</div></div>
+      </div>
+      <p>能跑通的是本地闭环：<code>demo_seed.py</code> 播种一天真格式数据，<code>docs/demo.sh</code> 用 curl 从 0 到 13 共 14 段走完“上传账单 → 匹配 → 差异 → 工单 → 结案 → 回调验签/防重放”。数据是合成的，容器与格式取自公开渠道文档。</p>
+      <p>明确不做的：</p>
+      <ul>
+        <li><strong>没有限流。</strong> 一个持有效 key 的调用方能把我打满；唯一闸门是请求体体积。</li>
+        <li><strong>单机单文件 SQLite。</strong> 写锁是进程内的 <code>asyncio.Lock</code>，没有迁移工具、没有自助开 key 界面、不终结 TLS。</li>
+        <li><strong>验签是类比实现。</strong> 微信 V2 结构（字典序规范串 + 对称密钥 HMAC-SHA256），不是 V3 平台证书链 RSA 验签与 AEAD 解密，也不是支付宝 RSA2。</li>
+        <li><strong>没有部署、没有远端。</strong> 按“只本地收尾”的决定，不建远端、不 push、不部署；所有“公网可用”类主张都没有证据。</li>
+      </ul>
+      <blockquote>这个项目最值得讲的是<strong>顺序和判据</strong>：先配对后判定、双向唯一、跨日用清算日、差异必须带下一步。代码量不是重点，能不能把“宁可不猜”写成可执行的约束才是。</blockquote>
+      <p>想亲手看两种策略的差异，去 <a href="../labs/recon.html">支付对账实验</a>；完整边界在项目的 <code>docs/single-node-limitations.md</code>。</p>
+    </div>
+    <nav class="art-nav">
+      <a id="nav-prev" href="#"></a>
+      <a href="../index.html#articles">返回主页</a>
+      <a id="nav-next" href="#"></a>
+    </nav>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <span>© 2026 Code &amp; Craft · 纯前端零构建 · 三主题特效常驻</span>
+      <span>GitHub · <a href="https://github.com/Vanity-1" target="_blank" rel="noopener">Vanity-1</a></span>
+    </div>
+  </footer>
+
+  <script src="../data/articles.js?v=20261024c"></script>
+  <script src="../assets/js/fx-core.js?v=20261024c"></script>
+  <script src="../assets/js/article.js?v=20261024c"></script>
+</body>
+</html>

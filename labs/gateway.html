@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="playful">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="AI 治理网关交互实验：模拟令牌桶、日预算和 Text-to-SQL 护栏，观察 429、预算拦截、RLS 注入与敏感列掩码。">
+  <title>AI 治理网关实验 · Code &amp; Craft</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧪</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@400;700&family=JetBrains+Mono:wght@500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@400;700&family=JetBrains+Mono:wght@500;700&family=Inter:wght@400;600&display=swap"><style>.reveal{opacity:1!important;transform:none!important}</style></noscript>
+  <link rel="stylesheet" href="../assets/css/base.css?v=20261024c">
+  <link rel="stylesheet" href="../assets/css/lab.css?v=20261024c">
+  <link rel="stylesheet" href="../assets/css/theme-playful.css?v=20261024c">
+  <link rel="stylesheet" href="../assets/css/theme-cyber.css?v=20261024c">
+  <link rel="stylesheet" href="../assets/css/theme-editorial.css?v=20261024c">
+  <script src="../assets/js/theme-switch.js?v=20261024c"></script>
+</head>
+<body>
+  <div id="progress"></div>
+
+  <header class="site-header">
+    <div class="container inner">
+      <a class="logo" href="../index.html#top">&lt;Code/&gt;Craft</a>
+      <nav class="site-nav">
+        <a href="../index.html#articles">文章</a>
+        <a href="index.html">实验室</a>
+        <a href="../index.html#interact">互动</a>
+        <a href="../index.html#guestbook">留言</a>
+        <a href="../index.html#about">关于</a>
+        <a href="https://github.com/Vanity-1" target="_blank" rel="noopener">GitHub</a>
+      </nav>
+      <div class="theme-switch">
+        <button data-theme-btn="playful" title="奇趣互动派">🎨</button>
+        <button data-theme-btn="cyber" title="赛博暗色派">⚡</button>
+        <button data-theme-btn="editorial" title="极简编辑派">✒️</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="lab-wrap">
+    <div class="container">
+      <div class="lab-hero reveal">
+        <div>
+          <div class="lab-kicker">LAB 01 · AI GATEWAY</div>
+          <h1>先撞限流，还是先撞预算？</h1>
+          <p>一个租户的 key 被复制后，调用方共享同一个令牌桶和同一份预算。把请求速率拉高，看网关先返回 429 还是先拒绝下一次上游调用；再换一条 SQL，看它是被 AST 重新生成，还是被某条护栏规则拦下。</p>
+          <div class="lab-actions">
+            <a class="lab-btn primary" href="../articles/ai-gateway.html">读完整文章</a>
+            <a class="lab-btn" href="index.html">全部实验</a>
+            <a class="lab-btn" href="../index.html#labs">回首页</a>
+          </div>
+        </div>
+        <aside class="lab-side">
+          <div class="t">演示边界</div>
+          <ul>
+            <li>预算与限流是离散模拟，参数可调</li>
+            <li>SQL 解析是演示子集，不是 sqlglot</li>
+            <li>真实项目：12 条规则 + AST 重新生成</li>
+            <li>数据、金额、姓名均为合成样本</li>
+          </ul>
+        </aside>
+      </div>
+
+      <section class="lab-panel reveal">
+        <h2>预算 / 限流沙盘</h2>
+        <p class="desc">租户默认：60 次/分、突发 10 个令牌、日预算 $0.20。把请求速率拉高模拟 key 被复制，观察 60 秒内哪些请求被放行。</p>
+        <div class="lab-controls">
+          <div class="lab-field">
+            <label for="budgetRate">请求速率：<strong id="budgetRateVal">120</strong> 次/分</label>
+            <input id="budgetRate" type="range" min="10" max="300" step="10" value="120">
+            <span class="hint">正常使用约 20–60 次/分</span>
+          </div>
+          <div class="lab-field">
+            <label for="budgetCost">单次平均成本（$）</label>
+            <input id="budgetCost" type="number" min="0.001" max="0.02" step="0.001" value="0.004">
+          </div>
+          <div class="lab-field">
+            <label for="budgetDaily">日预算（$）</label>
+            <input id="budgetDaily" type="number" min="0.05" max="2" step="0.05" value="0.20">
+          </div>
+          <button class="lab-btn primary" id="budgetRun">跑 60 秒</button>
+          <button class="lab-btn" id="budgetReset">恢复默认</button>
+        </div>
+        <div class="lab-kpis" id="budgetKpis"></div>
+        <div class="lab-timeline" id="budgetTimeline" aria-label="每 10 秒的请求结果"></div>
+        <div class="lab-note" id="budgetNote"></div>
+      </section>
+
+      <section class="lab-panel reveal">
+        <h2>Text-to-SQL 安检门</h2>
+        <p class="desc">输入或选一条候选 SQL。网关按规则优先级审查；放行时，真正送进数据库的是下面这条重新生成的 SQL——不是模型原文。</p>
+        <div class="lab-field grow">
+          <label for="sqlInput">候选 SQL</label>
+          <textarea id="sqlInput" spellcheck="false">SELECT id, base_salary, bonus FROM payroll_runs</textarea>
+        </div>
+        <div class="lab-chips" id="sqlSamples" style="margin:10px 0">
+          <button class="lab-btn" data-sql="SELECT id, name, dept_id FROM employees">正常查询</button>
+          <button class="lab-btn" data-sql="SELECT id, base_salary, bonus FROM payroll_runs">敏感列</button>
+          <button class="lab-btn" data-sql="SELECT id, name, phone FROM customer_pii WHERE dept_id = 1">PII 与 RLS</button>
+          <button class="lab-btn" data-sql="SELECT substr(phone, 1, 3) FROM customer_pii">函数包敏感列</button>
+          <button class="lab-btn" data-sql="SELECT id_card FROM customer_pii">隐藏列</button>
+          <button class="lab-btn" data-sql="DELETE FROM payroll_runs WHERE id = 1">DELETE</button>
+          <button class="lab-btn" data-sql="SELECT id FROM employees; DROP TABLE employees">多语句</button>
+          <button class="lab-btn" data-sql="SELECT id FROM employees FOR UPDATE">锁定读</button>
+          <button class="lab-btn" data-sql="SELECT id FROM employees LIMIT 10 OFFSET 9000">超限 OFFSET</button>
+          <button class="lab-btn" data-sql="SELECT id FROM employees UNION SELECT id FROM sqlite_master">白名单表</button>
+        </div>
+        <div class="lab-actions">
+          <button class="lab-btn primary" id="sqlRun">审查这条 SQL</button>
+          <button class="lab-btn" id="sqlCopy" data-copy-target="sqlCanonical">复制重生成 SQL</button>
+        </div>
+        <div class="lab-split" style="margin-top:16px">
+          <div>
+            <h3>规则流水线</h3>
+            <div class="lab-rule-list" id="sqlRules"></div>
+          </div>
+          <div>
+            <h3>判定</h3>
+            <div id="sqlVerdict"></div>
+            <h3 style="margin-top:12px">实际执行的 SQL</h3>
+            <pre class="lab-code" id="sqlCanonical"></pre>
+            <div class="lab-meta-grid" id="sqlParams"></div>
+            <div class="lab-chips" id="sqlMasks"></div>
+          </div>
+        </div>
+        <h3 style="margin-top:18px">结果预览（合成数据，已按掩码规则处理）</h3>
+        <div id="sqlPreview"></div>
+      </section>
+
+      <p class="lab-footer-note reveal">真实实现里，规则顺序由 <code>GUARD_RULE_SEED.priority</code> 固定；表白名单（GRD-004）排在标识符解析（GRD-003）之前，避免把“表根本不在目录里”误报成“列解析失败”。本页只复刻了演示所需的子集。</p>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <span>© 2026 Code &amp; Craft · 纯前端零构建 · 三主题特效常驻</span>
+      <span>GitHub · <a href="https://github.com/Vanity-1" target="_blank" rel="noopener">Vanity-1</a></span>
+    </div>
+  </footer>
+
+  <script src="../assets/js/lab.js?v=20261024c"></script>
+  <script src="../assets/js/lab-gateway.js?v=20261024c"></script>
+</body>
+</html>

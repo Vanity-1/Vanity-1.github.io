@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="playful">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="AIGC 标识交互实验：在浏览器里往 PNG 写入 AIGC 标识元数据，读回核验、篡改字段、追加只追加哈希链。">
+  <title>AIGC 标识实验 · Code &amp; Craft</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧪</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@400;700&family=JetBrains+Mono:wght@500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@400;700&family=JetBrains+Mono:wght@500;700&family=Inter:wght@400;600&display=swap"><style>.reveal{opacity:1!important;transform:none!important}</style></noscript>
+  <link rel="stylesheet" href="../assets/css/base.css?v=20261024c">
+  <link rel="stylesheet" href="../assets/css/lab.css?v=20261024c">
+  <link rel="stylesheet" href="../assets/css/theme-playful.css?v=20261024c">
+  <link rel="stylesheet" href="../assets/css/theme-cyber.css?v=20261024c">
+  <link rel="stylesheet" href="../assets/css/theme-editorial.css?v=20261024c">
+  <script src="../assets/js/theme-switch.js?v=20261024c"></script>
+</head>
+<body>
+  <div id="progress"></div>
+
+  <header class="site-header">
+    <div class="container inner">
+      <a class="logo" href="../index.html#top">&lt;Code/&gt;Craft</a>
+      <nav class="site-nav">
+        <a href="../index.html#articles">文章</a>
+        <a href="index.html">实验室</a>
+        <a href="../index.html#interact">互动</a>
+        <a href="../index.html#guestbook">留言</a>
+        <a href="../index.html#about">关于</a>
+        <a href="https://github.com/Vanity-1" target="_blank" rel="noopener">GitHub</a>
+      </nav>
+      <div class="theme-switch">
+        <button data-theme-btn="playful" title="奇趣互动派">🎨</button>
+        <button data-theme-btn="cyber" title="赛博暗色派">⚡</button>
+        <button data-theme-btn="editorial" title="极简编辑派">✒️</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="lab-wrap">
+    <div class="container">
+      <div class="lab-hero reveal">
+        <div>
+          <div class="lab-kicker">LAB 03 · AIGC LABEL</div>
+          <h1>把来源标签真正写进 PNG</h1>
+          <p>不是画一个能看见的水印：在浏览器里往 PNG 的 <code>iTXt</code> 块写入 AIGC 标识字段，立刻读回核验；改一个字段、追加一段字节、删掉标识，看每种篡改在哪一步被抓住。每次操作都会追加一条哈希链记录。</p>
+          <div class="lab-actions">
+            <a class="lab-btn primary" href="../articles/aigc-label.html">读完整文章</a>
+            <a class="lab-btn" href="index.html">全部实验</a>
+            <a class="lab-btn" href="../index.html#labs">回首页</a>
+          </div>
+        </div>
+        <aside class="lab-side">
+          <div class="t">演示边界</div>
+          <ul>
+            <li>浏览器内真实读写 PNG 元数据</li>
+            <li>仅支持 PNG；真实项目覆盖 8 个承载位</li>
+            <li>哈希链是演示账本，不落数据库</li>
+            <li>标签不承诺平台重编码后仍可验</li>
+            <li>只写生成侧四枚，可选传播方字段从简</li>
+          </ul>
+        </aside>
+      </div>
+
+      <section class="lab-panel reveal">
+        <h2>写入 / 核验</h2>
+        <p class="desc">先写入标识，再核验。图片、标签、台账全程留在当前浏览器，不会上传。</p>
+        <div class="lab-controls">
+          <div class="lab-field grow">
+            <label for="aigcProducer">ContentProducer（生成方）</label>
+            <input id="aigcProducer" type="text" maxlength="80" value="钟氏智造（深圳）有限公司">
+          </div>
+          <div class="lab-field grow">
+            <label for="aigcProduceId">ProduceID（内容 ID）</label>
+            <input id="aigcProduceId" type="text" maxlength="64" value="demo-20261023-0001">
+          </div>
+          <button class="lab-btn" id="aigcSample">换一张示例图</button>
+          <label class="lab-btn" for="aigcFile" style="cursor:pointer">上传 PNG</label>
+          <input id="aigcFile" type="file" accept="image/png" hidden>
+        </div>
+        <div class="lab-actions">
+          <button class="lab-btn primary" id="aigcWrite">写入标识</button>
+          <button class="lab-btn" id="aigcVerify">核验标识</button>
+          <button class="lab-btn" id="aigcTamperLabel">篡改标识字段</button>
+          <button class="lab-btn" id="aigcTamperFile">追加一段字节</button>
+          <button class="lab-btn" id="aigcRemove">删掉标识</button>
+          <button class="lab-btn" id="aigcReset">重置</button>
+        </div>
+
+        <div class="lab-split" style="margin-top:16px">
+          <div>
+            <div class="lab-image-box" id="aigcImageBox"><canvas id="aigcCanvas" width="900" height="560" hidden></canvas><img id="aigcPreview" alt="示例图"></div>
+            <div class="lab-chips" style="margin-top:10px" id="aigcStatus"></div>
+            <div class="lab-meta-grid" id="aigcFileMeta"></div>
+          </div>
+          <div>
+            <h3>判定</h3>
+            <div id="aigcVerdict"></div>
+            <h3 style="margin-top:12px">标识字段</h3>
+            <div class="lab-meta-grid" id="aigcManifest"></div>
+            <h3 style="margin-top:12px">写入元数据的 wire</h3>
+            <pre class="lab-code" id="aigcWire">（还没写入）</pre>
+            <button class="lab-btn" data-copy-target="aigcWire">复制 wire</button>
+          </div>
+        </div>
+        <div class="lab-flow" id="aigcSteps"></div>
+      </section>
+
+      <section class="lab-panel reveal">
+        <h2>只追加哈希链</h2>
+        <p class="desc">每条记录都带上上一条的 <code>entry_hash</code>。改中间一条，重算时会在那一条断开；但删掉链尾几条，账本自己看不出来——这是项目明确写下的边界。</p>
+        <div class="lab-actions">
+          <button class="lab-btn" id="aigcChainCheck">校验整条链</button>
+          <button class="lab-btn" id="aigcChainTamper">篡改链中一条</button>
+          <button class="lab-btn" id="aigcChainReset">清空台账</button>
+        </div>
+        <div id="aigcChainVerdict"></div>
+        <div class="lab-chain" id="aigcChain"></div>
+      </section>
+
+      <p class="lab-footer-note reveal">真实项目的链字段还包括 <code>phash</code>、<code>producer_keyed</code> 等；演示省略了感知哈希与 HMAC，只保留“每条接上一条”的结构。标识写入后不重编码像素，只新增一个 PNG 文本块；平台重新压缩后标识可能丢失，所以真实系统还靠台账文件指纹兜底。</p>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <span>© 2026 Code &amp; Craft · 纯前端零构建 · 三主题特效常驻</span>
+      <span>GitHub · <a href="https://github.com/Vanity-1" target="_blank" rel="noopener">Vanity-1</a></span>
+    </div>
+  </footer>
+
+  <script src="../assets/js/lab.js?v=20261024c"></script>
+  <script src="../assets/js/lab-aigc.js?v=20261024c"></script>
+</body>
+</html>

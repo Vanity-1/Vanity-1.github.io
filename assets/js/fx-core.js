@@ -85,11 +85,13 @@
     if (!el) return;
     var target = el.dataset.text || el.textContent; el.dataset.text = target;
     var chars = '!<>-_\\/[]{}=+*^?#01', frame = 0;
+    /* 长标题也在一秒半内收敛，别让读者对着乱码等五秒 */
+    var step = Math.max(1, Math.min(7, Math.round(70 / target.length)));
     var iv = setInterval(function () {
       var out = '', i;
-      for (i = 0; i < target.length; i++) out += (frame / 7 > i) ? target[i] : chars[(Math.random() * chars.length) | 0];
+      for (i = 0; i < target.length; i++) out += (frame / step > i) ? target[i] : chars[(Math.random() * chars.length) | 0];
       el.textContent = out; frame++;
-      if (frame > target.length * 7 + 16) clearInterval(iv);
+      if (frame > target.length * step + 16) clearInterval(iv);
     }, 22);
     FX.cleanups.push(function () { clearInterval(iv); el.textContent = target; });
   };
@@ -203,9 +205,9 @@
     FX.tilt([].slice.call(document.querySelectorAll('.card')));
     [].slice.call(document.querySelectorAll('[data-confetti]')).forEach(FX.confetti);
     FX.typewriter(document.getElementById('hero-sub'), [
-      '写 RAG 与 Agent 的工程手记，也折腾前端动效。',
-      '尽量给出可复现的结论与数据。',
-      '双周更新一篇长文，欢迎留言交流。'
+      '写 RAG 与 Agent 的工程手记，也做支付对账、AI 内容合规与可交互的前端实验。',
+      '三个项目都做了可以在浏览器里直接操作的工程沙盘。',
+      '尽量给出可复现的结论与数据，也把没做到的部分写清楚。'
     ]);
   };
   FX.destroy = function () { FX.cleanups.forEach(function (f) { f(); }); FX.cleanups = []; };
